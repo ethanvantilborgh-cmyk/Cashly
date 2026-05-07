@@ -1,26 +1,78 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+}
+
+.card-hover {
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.card-hover:hover {
+  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.1);
+  border-color: #6ee7b7;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #059669 0%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-btn {
+  background: linear-gradient(135deg, #059669 0%, #0284c7 100%);
+  transition: opacity 0.2s, transform 0.1s;
+}
+.gradient-btn:hover { opacity: 0.9; }
+.gradient-btn:active { transform: scale(0.98); }
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+}
+.sidebar-link:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.sidebar-link.active {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.status-paid   { background: #dcfce7; color: #16a34a; }
+.status-pending { background: #fef9c3; color: #ca8a04; }
+.status-overdue { background: #fee2e2; color: #dc2626; }
+
+.badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
 }
