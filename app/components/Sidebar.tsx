@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { TrendingUp, LayoutDashboard, FileText, Receipt, BarChart2, Settings, LogOut } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { Lang } from "../lib/translations";
+import UpgradeButton from "./UpgradeButton";
 
 const LANGS: { value: Lang; flag: string; label: string }[] = [
   { value: "fr", flag: "🇫🇷", label: "FR" },
@@ -72,9 +73,7 @@ export default function Sidebar() {
           <div className="mt-2 h-1.5 bg-emerald-100 rounded-full">
             <div className="h-1.5 bg-emerald-500 rounded-full" style={{ width: "60%" }} />
           </div>
-          <button className="mt-2 gradient-btn w-full text-center text-xs font-semibold py-1.5 rounded-lg text-white">
-            {tr("upgradePro")}
-          </button>
+          <UpgradeButton label={tr("upgradePro")} className="mt-2 gradient-btn w-full text-xs font-semibold py-1.5 rounded-lg text-white" />
         </div>
       </div>
     </aside>

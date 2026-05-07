@@ -1,8 +1,10 @@
 "use client";
 import Sidebar from "../components/Sidebar";
-import { TrendingUp, TrendingDown, FileText, Receipt, AlertCircle, ArrowUpRight, Plus } from "lucide-react";
+import { TrendingUp, TrendingDown, FileText, Receipt, AlertCircle, ArrowUpRight, Plus, PartyPopper } from "lucide-react";
 import Link from "next/link";
 import { useLang } from "../context/LangContext";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 const RECENT_INVOICES = [
   { id: "INV-001", client: "Acme Corp",     amount: 2400, status: "paid",    date: "2025-04-28" },
@@ -17,8 +19,10 @@ const RECENT_EXPENSES = [
   { label: "Hébergement / Hosting",    amount: 29.00, category: "Infrastructure",         date: "2025-04-27" },
 ];
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { tr } = useLang();
+  const searchParams = useSearchParams();
+  const upgraded = searchParams.get("upgraded") === "true";
 
   const STATUS_MAP = {
     paid:    { label: tr("paid"),    className: "status-paid" },
@@ -30,6 +34,12 @@ export default function DashboardPage() {
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
       <main className="flex-1 p-8 overflow-auto">
+        {upgraded && (
+          <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
+            <PartyPopper className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+            <p className="text-sm font-semibold text-emerald-700">Bienvenue sur Cashly Pro ! Toutes les fonctionnalités sont débloquées. 🎉</p>
+          </div>
+        )}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{tr("hello")}</h1>
@@ -115,5 +125,13 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardContent />
+    </Suspense>
   );
 }
