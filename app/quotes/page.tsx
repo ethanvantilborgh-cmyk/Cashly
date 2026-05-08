@@ -109,15 +109,21 @@ export default function QuotesPage() {
     setShowModal(true);
   }
 
+  function nextQuoteId(list: Quote[]) {
+    const nums = list.map(q => parseInt(q.id.replace(/\D/g, ""), 10)).filter(n => !isNaN(n));
+    const max = nums.length ? Math.max(...nums) : 0;
+    return `DEV-${String(max + 1).padStart(3, "0")}`;
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (editId) {
       const updated = quotes.map(q => q.id === editId ? { ...q, client: form.client, email: form.email, amount: parseFloat(form.amount), due: form.due, vatRate: parseFloat(form.vatRate), description: form.description } : q);
       setQuotes(updated); saveQuotes(updated);
-      showToast("✓ Devis modifié !");
+      showToast(tr("saveChanges") + " ✓");
     } else {
       const newQ: Quote = {
-        id: `DEV-${String(quotes.length + 1).padStart(3, "0")}`,
+        id: nextQuoteId(quotes),
         client: form.client, email: form.email,
         amount: parseFloat(form.amount),
         status: "draft",
@@ -139,7 +145,7 @@ export default function QuotesPage() {
   function deleteQuote(id: string) {
     const updated = quotes.filter(q => q.id !== id);
     setQuotes(updated); saveQuotes(updated);
-    showToast("Devis supprimé");
+    showToast(tr("quoteDeleted"));
   }
 
   function convertToInvoice(q: Quote) {
@@ -260,7 +266,7 @@ export default function QuotesPage() {
                         <button onClick={() => deleteQuote(q.id)} title="Supprimer" className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                         {q.status === "accepted" && (
                           <span className="text-xs text-emerald-600 font-medium flex items-center gap-1 ml-1">
-                            <Check className="w-3 h-3" /> Converti
+                            <Check className="w-3 h-3" /> {tr("quoteConverted2")}
                           </span>
                         )}
                       </div>
@@ -287,7 +293,7 @@ export default function QuotesPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-900">{editId ? "Modifier le devis" : tr("newQuoteTitle")}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{editId ? tr("editQuote") : tr("newQuoteTitle")}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -359,7 +365,7 @@ export default function QuotesPage() {
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>
                 <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">
-                  {editId ? "Enregistrer" : tr("newQuote")}
+                  {editId ? tr("saveChanges") : tr("newQuote")}
                 </button>
               </div>
             </form>

@@ -38,7 +38,7 @@ export default function ServicesPage() {
     }
     setServices(updated); saveServices(updated);
     setShowModal(false); setForm(EMPTY);
-    showToast(editId ? "Service mis à jour !" : "Service ajouté !");
+    showToast(editId ? "✓ " + tr("saveChanges") : "✓ " + tr("addService"));
   }
 
   function handleDelete(id: string) {
@@ -61,12 +61,12 @@ export default function ServicesPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Package className="w-6 h-6 text-sky-500" /> Catalogue de services
+              <Package className="w-6 h-6 text-sky-500" /> {tr("services")}
             </h1>
-            <p className="text-slate-500 text-sm mt-1">Vos prestations et tarifs enregistrés</p>
+            <p className="text-slate-500 text-sm mt-1">{lang === "en" ? "Your services and rates" : lang === "nl" ? "Uw diensten en tarieven" : "Vos prestations et tarifs enregistrés"}</p>
           </div>
           <button onClick={openCreate} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
-            <Plus className="w-4 h-4" /> Nouveau service
+            <Plus className="w-4 h-4" /> {tr("addService")}
           </button>
         </div>
 
@@ -81,9 +81,9 @@ export default function ServicesPage() {
         {services.length === 0 ? (
           <div className="card p-12 text-center">
             <Package className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400 font-medium">Aucun service enregistré</p>
+            <p className="text-slate-400 font-medium">{lang === "en" ? "No services yet" : lang === "nl" ? "Geen diensten gevonden" : "Aucun service enregistré"}</p>
             <button onClick={openCreate} className="mt-4 gradient-btn text-sm font-semibold px-5 py-2 rounded-xl text-white inline-flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Ajouter un service
+              <Plus className="w-4 h-4" /> {tr("addService")}
             </button>
           </div>
         ) : (
@@ -121,28 +121,28 @@ export default function ServicesPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-sm p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-900">{editId ? "Modifier le service" : "Nouveau service"}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{editId ? tr("editService") : tr("services")}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Nom du service *</label>
-                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Développement web"
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("clientName").replace("client", "").replace("Klant", "").replace("Client", "").trim() || tr("description")} *</label>
+                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={lang === "en" ? "Web development" : lang === "nl" ? "Webontwikkeling" : "Développement web"}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
-                <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Développement front/back"
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("description")}</label>
+                <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder={lang === "en" ? "Front/back development" : lang === "nl" ? "Front/back ontwikkeling" : "Développement front/back"}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Prix unitaire (€) *</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("amountEur")} *</label>
                   <input required type="number" min="0" step="0.01" value={form.unitPrice || ""} onChange={e => setForm({ ...form, unitPrice: parseFloat(e.target.value) || 0 })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Unité</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{lang === "en" ? "Unit" : lang === "nl" ? "Eenheid" : "Unité"}</label>
                   <select value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
                     {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
@@ -150,7 +150,7 @@ export default function ServicesPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Taux TVA</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("vatRate")}</label>
                 <select value={form.vatRate} onChange={e => setForm({ ...form, vatRate: parseFloat(e.target.value) })}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
                   <option value={0}>{tr("vat0")}</option>
@@ -162,7 +162,7 @@ export default function ServicesPage() {
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>
                 <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">
-                  {editId ? tr("saveSettings") : "Ajouter"}
+                  {editId ? tr("saveChanges") : tr("addService")}
                 </button>
               </div>
             </form>

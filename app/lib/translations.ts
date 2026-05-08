@@ -183,6 +183,22 @@ export const t = {
     invoiceNotes: "Notes de bas de facture",
     profileSection: "Profil entreprise",
     billingSection: "Facturation",
+
+    // Edit / Delete actions
+    editInvoice: "Modifier la facture",
+    editQuote: "Modifier le devis",
+    editClient: "Modifier le client",
+    editExpense: "Modifier la dépense",
+    editService: "Modifier le service",
+    saveChanges: "Enregistrer les modifications",
+    invoiceDeleted: "Facture supprimée",
+    expenseDeleted: "Dépense supprimée",
+    quoteDeleted: "Devis supprimé",
+    serviceDeleted: "Service supprimé",
+    clientDeleted: "Client supprimé",
+    addClient: "Ajouter le client",
+    addService: "Ajouter le service",
+    quoteConverted2: "Converti",
   },
 
   en: {
@@ -353,6 +369,21 @@ export const t = {
     invoiceNotes: "Invoice footer notes",
     profileSection: "Company profile",
     billingSection: "Billing",
+
+    editInvoice: "Edit invoice",
+    editQuote: "Edit quote",
+    editClient: "Edit client",
+    editExpense: "Edit expense",
+    editService: "Edit service",
+    saveChanges: "Save changes",
+    invoiceDeleted: "Invoice deleted",
+    expenseDeleted: "Expense deleted",
+    quoteDeleted: "Quote deleted",
+    serviceDeleted: "Service deleted",
+    clientDeleted: "Client deleted",
+    addClient: "Add client",
+    addService: "Add service",
+    quoteConverted2: "Converted",
   },
 
   nl: {
@@ -523,6 +554,21 @@ export const t = {
     invoiceNotes: "Voetnoten factuur",
     profileSection: "Bedrijfsprofiel",
     billingSection: "Facturatie",
+
+    editInvoice: "Factuur bewerken",
+    editQuote: "Offerte bewerken",
+    editClient: "Klant bewerken",
+    editExpense: "Uitgave bewerken",
+    editService: "Dienst bewerken",
+    saveChanges: "Wijzigingen opslaan",
+    invoiceDeleted: "Factuur verwijderd",
+    expenseDeleted: "Uitgave verwijderd",
+    quoteDeleted: "Offerte verwijderd",
+    serviceDeleted: "Dienst verwijderd",
+    clientDeleted: "Klant verwijderd",
+    addClient: "Klant toevoegen",
+    addService: "Dienst toevoegen",
+    quoteConverted2: "Omgezet",
   },
 };
 

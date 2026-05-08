@@ -61,7 +61,7 @@ export default function InvoicesPage() {
 
   function deleteInvoice(id: string) {
     persist(invoices.filter(i => i.id !== id));
-    showToast("Facture supprimée");
+    showToast(tr("invoiceDeleted"));
   }
 
   function duplicateInvoice(inv: Invoice) {
@@ -156,7 +156,7 @@ export default function InvoicesPage() {
         due, vatRate: lines[0]?.vatRate ?? 21, recurring,
       } : i);
       persist(updated);
-      showToast("✓ Facture modifiée !");
+      showToast("✓ " + tr("saveChanges"));
     } else {
       // Create new invoice
       const newInv: Invoice = {
@@ -356,7 +356,7 @@ export default function InvoicesPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-2xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-900">{editId ? "Modifier la facture" : tr("newInvoiceTitle")}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{editId ? tr("editInvoice") : tr("newInvoiceTitle")}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -480,7 +480,7 @@ export default function InvoicesPage() {
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>
                 <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">
-                  {editId ? "Enregistrer les modifications" : tr("createInvoice")}
+                  {editId ? tr("saveChanges") : tr("createInvoice")}
                 </button>
               </div>
             </form>

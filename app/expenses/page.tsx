@@ -47,7 +47,9 @@ export default function ExpensesPage() {
 
   function openEdit(exp: Expense) {
     setEditId(exp.id);
-    setForm({ label: exp.label, amount: exp.amount.toString(), category: exp.category, date: exp.date, note: exp.note });
+    // Normalize category: if saved category doesn't exist in current language list, keep it as-is (it will still save correctly)
+    const normalizedCategory = CATEGORIES.includes(exp.category) ? exp.category : CATEGORIES[0];
+    setForm({ label: exp.label, amount: exp.amount.toString(), category: normalizedCategory, date: exp.date, note: exp.note });
     setShowModal(true);
   }
 
@@ -66,7 +68,7 @@ export default function ExpensesPage() {
         ? { ...e, label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORIES[0], date: form.date, note: form.note }
         : e
       );
-      showToast("✓ Dépense modifiée !");
+      showToast("✓ " + tr("saveChanges"));
     } else {
       updated = [{ id: Date.now(), label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORIES[0], date: form.date, note: form.note }, ...expenses];
       showToast(tr("expenseAdded"));
@@ -78,7 +80,7 @@ export default function ExpensesPage() {
   function deleteExpense(id: number) {
     const updated = expenses.filter(e => e.id !== id);
     setExpenses(updated); saveExpenses(updated);
-    showToast("Dépense supprimée");
+    showToast(tr("expenseDeleted"));
   }
 
   return (
@@ -162,7 +164,7 @@ export default function ExpensesPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-900">{editId !== null ? "Modifier la dépense" : tr("addExpenseTitle")}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{editId !== null ? tr("editExpense") : tr("addExpenseTitle")}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -198,7 +200,7 @@ export default function ExpensesPage() {
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>
                 <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">
-                  {editId !== null ? "Enregistrer" : tr("add")}
+                  {editId !== null ? tr("saveChanges") : tr("add")}
                 </button>
               </div>
             </form>

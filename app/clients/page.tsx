@@ -184,7 +184,7 @@ export default function ClientsPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-900">{editId ? "Modifier le client" : tr("newClientTitle")}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{editId ? tr("editClient") : tr("newClientTitle")}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -198,7 +198,7 @@ export default function ClientsPage() {
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>
                 <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">
-                  {editId ? tr("saveSettings") : tr("createInvoice").replace("Créer la facture", "Ajouter")}
+                  {editId ? tr("saveChanges") : tr("addClient")}
                 </button>
               </div>
             </form>
