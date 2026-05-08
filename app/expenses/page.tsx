@@ -1,6 +1,7 @@
 "use client";
 import Sidebar from "../components/Sidebar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getExpenses, saveExpenses } from "../lib/storage";
 import { Plus, Search, Receipt, X, Check } from "lucide-react";
 import { useLang } from "../context/LangContext";
 
@@ -32,7 +33,8 @@ const INITIAL: Expense[] = [
 
 export default function ExpensesPage() {
   const { lang, tr } = useLang();
-  const [expenses, setExpenses]   = useState<Expense[]>(INITIAL);
+  const [expenses, setExpenses]   = useState<Expense[]>([]);
+  useEffect(() => { setExpenses(getExpenses()); }, []);
   const [search, setSearch]       = useState("");
   const [filterCat, setFilterCat] = useState("all");
   const [showModal, setShowModal] = useState(false);
@@ -50,7 +52,8 @@ export default function ExpensesPage() {
 
   function addExpense(ev: React.FormEvent) {
     ev.preventDefault();
-    setExpenses([{ id: Date.now(), label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORIES[0], date: form.date, note: form.note }, ...expenses]);
+    const updated = [{ id: Date.now(), label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORIES[0], date: form.date, note: form.note }, ...expenses];
+    setExpenses(updated); saveExpenses(updated);
     setShowModal(false);
     setForm({ label: "", amount: "", category: "", date: "", note: "" });
     setSaved(true);

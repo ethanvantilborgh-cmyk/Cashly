@@ -4,29 +4,20 @@ import { TrendingUp, TrendingDown, FileText, Receipt, AlertCircle, ArrowUpRight,
 import Link from "next/link";
 import { useLang } from "../context/LangContext";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { activatePro } from "../lib/pro";
-
-const RECENT_INVOICES = [
-  { id: "INV-001", client: "Acme Corp",     amount: 2400, status: "paid",    date: "2025-04-28" },
-  { id: "INV-002", client: "StartupXYZ",    amount: 1800, status: "pending", date: "2025-04-25" },
-  { id: "INV-003", client: "Design Studio", amount: 950,  status: "overdue", date: "2025-04-10" },
-  { id: "INV-004", client: "Tech Agency",   amount: 3200, status: "paid",    date: "2025-04-05" },
-];
-
-const RECENT_EXPENSES = [
-  { label: "Adobe Creative Cloud",     amount: 54.99, category: "Logiciels / Software",  date: "2025-04-30" },
-  { label: "Déplacement / Travel",     amount: 87.50, category: "Transport",              date: "2025-04-28" },
-  { label: "Hébergement / Hosting",    amount: 29.00, category: "Infrastructure",         date: "2025-04-27" },
-];
+import { getDashboardStats, Invoice, Expense } from "../lib/storage";
 
 function DashboardContent() {
   const { tr } = useLang();
   const searchParams = useSearchParams();
   const upgraded = searchParams.get("upgraded") === "true";
 
+  const [stats, setStats] = useState({ revenue: 0, totalExp: 0, netProfit: 0, unpaidAmt: 0, unpaidCount: 0, recentInvoices: [] as Invoice[], recentExpenses: [] as Expense[] });
+
   useEffect(() => {
     if (upgraded) activatePro();
+    setStats(getDashboardStats());
   }, [upgraded]);
 
   const STATUS_MAP = {
@@ -34,6 +25,8 @@ function DashboardContent() {
     pending: { label: tr("pending"), className: "status-pending" },
     overdue: { label: tr("overdue"), className: "status-overdue" },
   };
+
+  const fmt = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 0 }) + " €";
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -45,6 +38,7 @@ function DashboardContent() {
             <p className="text-sm font-semibold text-emerald-700">Bienvenue sur Cashly Pro ! Toutes les fonctionnalités sont débloquées. 🎉</p>
           </div>
         )}
+
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{tr("hello")}</h1>
@@ -55,13 +49,14 @@ function DashboardContent() {
           </Link>
         </div>
 
+        {/* Real KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: tr("revenue"),      value: "12 450 €", change: "+18%", up: true,  icon: TrendingUp,   color: "text-emerald-600", bg: "bg-emerald-50" },
-            { label: tr("expensesLabel"),value: "3 280 €",  change: "+5%",  up: false, icon: TrendingDown, color: "text-red-500",     bg: "bg-red-50" },
-            { label: tr("netProfit"),    value: "9 170 €",  change: "+24%", up: true,  icon: TrendingUp,   color: "text-sky-600",     bg: "bg-sky-50" },
-            { label: tr("unpaid"),       value: "2 750 €",  change: "2",    up: false, icon: AlertCircle,  color: "text-amber-600",   bg: "bg-amber-50" },
-          ].map(({ label, value, change, up, icon: Icon, color, bg }) => (
+            { label: tr("revenue"),       value: fmt(stats.revenue),    sub: `${stats.recentInvoices.filter(i=>i.status==="paid").length} factures payées`, up: true,  icon: TrendingUp,   color: "text-emerald-600", bg: "bg-emerald-50" },
+            { label: tr("expensesLabel"), value: fmt(stats.totalExp),   sub: `${stats.recentExpenses.length} dépenses`,  up: false, icon: TrendingDown, color: "text-red-500",     bg: "bg-red-50" },
+            { label: tr("netProfit"),     value: fmt(stats.netProfit),  sub: stats.netProfit >= 0 ? "Bénéfice" : "Déficit", up: stats.netProfit >= 0, icon: TrendingUp, color: stats.netProfit >= 0 ? "text-sky-600" : "text-red-500", bg: stats.netProfit >= 0 ? "bg-sky-50" : "bg-red-50" },
+            { label: tr("unpaid"),        value: fmt(stats.unpaidAmt),  sub: `${stats.unpaidCount} factures`, up: false, icon: AlertCircle,  color: "text-amber-600",   bg: "bg-amber-50" },
+          ].map(({ label, value, sub, up, icon: Icon, color, bg }) => (
             <div key={label} className="card p-5">
               <div className="flex items-start justify-between mb-3">
                 <p className="text-sm text-slate-500">{label}</p>
@@ -70,12 +65,13 @@ function DashboardContent() {
                 </div>
               </div>
               <p className={`text-2xl font-bold ${color}`}>{value}</p>
-              <p className={`text-xs mt-1 font-medium ${up ? "text-emerald-600" : "text-slate-400"}`}>{change}</p>
+              <p className={`text-xs mt-1 font-medium ${up ? "text-emerald-600" : "text-slate-400"}`}>{sub}</p>
             </div>
           ))}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
+          {/* Recent invoices — real data */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-semibold text-slate-900 flex items-center gap-2">
@@ -86,7 +82,10 @@ function DashboardContent() {
               </Link>
             </div>
             <div className="space-y-3">
-              {RECENT_INVOICES.map(inv => (
+              {stats.recentInvoices.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-4">{tr("noInvoice")}</p>
+              )}
+              {stats.recentInvoices.map(inv => (
                 <div key={inv.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
                   <div>
                     <p className="text-sm font-medium text-slate-800">{inv.client}</p>
@@ -94,15 +93,14 @@ function DashboardContent() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-slate-900">{inv.amount.toLocaleString()} €</span>
-                    <span className={`badge ${STATUS_MAP[inv.status as keyof typeof STATUS_MAP].className}`}>
-                      {STATUS_MAP[inv.status as keyof typeof STATUS_MAP].label}
-                    </span>
+                    <span className={`badge ${STATUS_MAP[inv.status].className}`}>{STATUS_MAP[inv.status].label}</span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Recent expenses — real data */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-semibold text-slate-900 flex items-center gap-2">
@@ -113,8 +111,11 @@ function DashboardContent() {
               </Link>
             </div>
             <div className="space-y-3">
-              {RECENT_EXPENSES.map(exp => (
-                <div key={exp.label} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+              {stats.recentExpenses.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-4">{tr("noExpense")}</p>
+              )}
+              {stats.recentExpenses.map(exp => (
+                <div key={exp.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
                   <div>
                     <p className="text-sm font-medium text-slate-800">{exp.label}</p>
                     <p className="text-xs text-slate-400">{exp.category} · {exp.date}</p>
