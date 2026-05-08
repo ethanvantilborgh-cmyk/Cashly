@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { TrendingUp, LayoutDashboard, FileText, Receipt, BarChart2, Settings, LogOut } from "lucide-react";
+import { TrendingUp, LayoutDashboard, FileText, Receipt, BarChart2, Settings, LogOut, Crown } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { Lang } from "../lib/translations";
 import UpgradeButton from "./UpgradeButton";
+import { useState, useEffect } from "react";
+import { isPro, FREE_INVOICE_LIMIT } from "../lib/pro";
 
 const LANGS: { value: Lang; flag: string; label: string }[] = [
   { value: "fr", flag: "🇫🇷", label: "FR" },
@@ -15,6 +17,8 @@ const LANGS: { value: Lang; flag: string; label: string }[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { lang, setLang, tr } = useLang();
+  const [pro, setPro] = useState(false);
+  useEffect(() => { setPro(isPro()); }, []);
 
   const NAV = [
     { href: "/dashboard", icon: LayoutDashboard, label: tr("dashboard") },
@@ -67,14 +71,24 @@ export default function Sidebar() {
       </div>
 
       <div className="p-4 border-t border-slate-100">
-        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
-          <p className="text-xs font-semibold text-emerald-700 mb-1">{tr("freePlan")}</p>
-          <p className="text-xs text-emerald-600">3/5 {tr("invoices").toLowerCase()}</p>
-          <div className="mt-2 h-1.5 bg-emerald-100 rounded-full">
-            <div className="h-1.5 bg-emerald-500 rounded-full" style={{ width: "60%" }} />
+        {pro ? (
+          <div className="bg-gradient-to-br from-emerald-500 to-sky-500 rounded-xl p-3 text-white">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Crown className="w-3.5 h-3.5" />
+              <p className="text-xs font-bold">Cashly Pro</p>
+            </div>
+            <p className="text-xs opacity-90">Factures illimitées ✓</p>
           </div>
-          <UpgradeButton label={tr("upgradePro")} className="mt-2 gradient-btn w-full text-xs font-semibold py-1.5 rounded-lg text-white" />
-        </div>
+        ) : (
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+            <p className="text-xs font-semibold text-emerald-700 mb-1">{tr("freePlan")}</p>
+            <p className="text-xs text-emerald-600">3/{FREE_INVOICE_LIMIT} {tr("invoices").toLowerCase()}</p>
+            <div className="mt-2 h-1.5 bg-emerald-100 rounded-full">
+              <div className="h-1.5 bg-emerald-500 rounded-full" style={{ width: `${(3 / FREE_INVOICE_LIMIT) * 100}%` }} />
+            </div>
+            <UpgradeButton label={tr("upgradePro")} className="mt-2 gradient-btn w-full text-xs font-semibold py-1.5 rounded-lg text-white" />
+          </div>
+        )}
       </div>
     </aside>
   );

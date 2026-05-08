@@ -4,7 +4,8 @@ import { TrendingUp, TrendingDown, FileText, Receipt, AlertCircle, ArrowUpRight,
 import Link from "next/link";
 import { useLang } from "../context/LangContext";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
+import { activatePro } from "../lib/pro";
 
 const RECENT_INVOICES = [
   { id: "INV-001", client: "Acme Corp",     amount: 2400, status: "paid",    date: "2025-04-28" },
@@ -23,6 +24,10 @@ function DashboardContent() {
   const { tr } = useLang();
   const searchParams = useSearchParams();
   const upgraded = searchParams.get("upgraded") === "true";
+
+  useEffect(() => {
+    if (upgraded) activatePro();
+  }, [upgraded]);
 
   const STATUS_MAP = {
     paid:    { label: tr("paid"),    className: "status-paid" },

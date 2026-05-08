@@ -1,9 +1,11 @@
 "use client";
 import Sidebar from "../components/Sidebar";
-import { useState } from "react";
-import { Plus, Search, FileText, Download, Send, X, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Search, FileText, Download, Send, X, Check, Lock, Crown } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { printInvoice } from "../lib/printInvoice";
+import { isPro, FREE_INVOICE_LIMIT } from "../lib/pro";
+import UpgradeButton from "../components/UpgradeButton";
 
 type Invoice = {
   id: string; client: string; email: string; amount: number;
@@ -23,8 +25,12 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>(INITIAL);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [form, setForm] = useState({ client: "", email: "", amount: "", due: "" });
   const [saved, setSaved] = useState(false);
+  const [pro, setPro] = useState(false);
+
+  useEffect(() => { setPro(isPro()); }, []);
 
   const STATUS_MAP = {
     paid:    { label: tr("paid"),    className: "status-paid" },
@@ -36,6 +42,14 @@ export default function InvoicesPage() {
     inv.client.toLowerCase().includes(search.toLowerCase()) ||
     inv.id.toLowerCase().includes(search.toLowerCase())
   );
+
+  function handleNewInvoice() {
+    if (!pro && invoices.length >= FREE_INVOICE_LIMIT) {
+      setShowUpgrade(true);
+    } else {
+      setShowModal(true);
+    }
+  }
 
   function createInvoice(e: React.FormEvent) {
     e.preventDefault();
@@ -69,7 +83,7 @@ export default function InvoicesPage() {
             </h1>
             <p className="text-slate-500 text-sm mt-1">{tr("invoicesSub")}</p>
           </div>
-          <button onClick={() => setShowModal(true)} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
+          <button onClick={handleNewInvoice} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
             <Plus className="w-4 h-4" /> {tr("newInvoice")}
           </button>
         </div>
@@ -77,6 +91,29 @@ export default function InvoicesPage() {
         {saved && (
           <div className="fixed top-6 right-6 z-50 bg-emerald-500 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium">
             <Check className="w-4 h-4" /> {tr("invoiceCreated")}
+          </div>
+        )}
+
+        {/* Free plan limit bar */}
+        {!pro && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-amber-800">Plan Gratuit — {invoices.length}/{FREE_INVOICE_LIMIT} factures</p>
+                {invoices.length >= FREE_INVOICE_LIMIT && <span className="text-xs text-red-500 font-semibold">Limite atteinte</span>}
+              </div>
+              <div className="h-2 bg-amber-100 rounded-full">
+                <div className="h-2 bg-amber-400 rounded-full transition-all" style={{ width: `${Math.min((invoices.length / FREE_INVOICE_LIMIT) * 100, 100)}%` }} />
+              </div>
+            </div>
+            <UpgradeButton label="Passer Pro →" className="gradient-btn text-xs font-semibold px-4 py-2 rounded-lg text-white flex-shrink-0" />
+          </div>
+        )}
+
+        {pro && (
+          <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-center gap-2">
+            <Crown className="w-4 h-4 text-emerald-600" />
+            <p className="text-sm font-semibold text-emerald-700">Cashly Pro · Factures illimitées ✓</p>
           </div>
         )}
 
@@ -175,6 +212,33 @@ export default function InvoicesPage() {
                 <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">{tr("createInvoice")}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade modal */}
+      {showUpgrade && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+          <div className="card w-full max-w-sm p-8 shadow-2xl text-center">
+            <div className="w-14 h-14 gradient-btn rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-7 h-7 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Limite atteinte</h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Le plan gratuit est limité à <strong>{FREE_INVOICE_LIMIT} factures</strong>.<br/>
+              Passez Pro pour des factures illimitées.
+            </p>
+            <ul className="text-left space-y-2 mb-6">
+              {["Factures illimitées", "Export PDF professionnel", "Rapports avancés", "Support prioritaire"].map(f => (
+                <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
+                  <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" /> {f}
+                </li>
+              ))}
+            </ul>
+            <UpgradeButton label="Passer Pro — 19€/mois" className="gradient-btn w-full font-semibold py-3 rounded-xl text-white mb-3" />
+            <button onClick={() => setShowUpgrade(false)} className="text-sm text-slate-400 hover:text-slate-600 w-full py-2">
+              Annuler
+            </button>
           </div>
         </div>
       )}
