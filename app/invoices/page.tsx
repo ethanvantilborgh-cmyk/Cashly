@@ -23,6 +23,9 @@ export default function InvoicesPage() {
   const RECURRING_LABELS: Record<RecurringFreq, string> = {
     none: "", monthly: "🔁 " + tr("recurringMonthly"), quarterly: "🔁 " + tr("recurringQuarterly"), yearly: "🔁 " + tr("recurringYearly"),
   };
+  const UNIT_LABELS: Record<string, string> = {
+    hour: tr("unitHour"), day: tr("unitDay"), package: tr("unitPackage"), unit: tr("unitUnit"), month: tr("unitMonth"),
+  };
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -410,7 +413,7 @@ export default function InvoicesPage() {
                         className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 transition-colors border-b border-slate-50 last:border-0 flex items-center justify-between">
                         <div>
                           <p className="font-medium text-slate-900">{s.name}</p>
-                          <p className="text-xs text-slate-400">{s.unitPrice} €/{s.unit} · TVA {s.vatRate}%</p>
+                          <p className="text-xs text-slate-400">{s.unitPrice} €/{UNIT_LABELS[s.unit] || s.unit} · {tr("vatAmount")} {s.vatRate}%</p>
                         </div>
                         <Plus className="w-4 h-4 text-emerald-500" />
                       </button>

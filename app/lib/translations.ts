@@ -379,6 +379,7 @@ export const t = {
     // Quarter / pricing
     quarterPrefix: "T",
     perMonth: "/mois",
+    validity: "validité",
 
     // Error messages
     unknownError: "Erreur inconnue",
@@ -756,6 +757,7 @@ export const t = {
     // Quarter / pricing
     quarterPrefix: "Q",
     perMonth: "/month",
+    validity: "validity",
 
     // Error messages
     unknownError: "Unknown error",
@@ -1133,6 +1135,7 @@ export const t = {
     // Quarter / pricing
     quarterPrefix: "K",
     perMonth: "/maand",
+    validity: "geldigheid",
 
     // Error messages
     unknownError: "Onbekende fout",

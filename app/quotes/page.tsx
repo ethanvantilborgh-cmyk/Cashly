@@ -358,7 +358,7 @@ export default function QuotesPage() {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("dueDate")} (validité) *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("dueDate")} ({tr("validity")}) *</label>
                 <input required type="date" value={form.due} onChange={e => setForm({ ...form, due: e.target.value })}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
               </div>
