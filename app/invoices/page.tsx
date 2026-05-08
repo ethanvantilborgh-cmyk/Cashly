@@ -1,7 +1,7 @@
 "use client";
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
-import { Plus, Search, FileText, Download, X, Check, Lock, Crown, ChevronDown, CheckCircle2, Link2, Mail, FileDown, RefreshCw, Trash2, Package } from "lucide-react";
+import { Plus, Search, FileText, Download, X, Check, Lock, Crown, ChevronDown, CheckCircle2, Link2, Mail, FileDown, RefreshCw, Trash2, Package, Pencil, Copy } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { printInvoice } from "../lib/printInvoice";
 import { isPro, FREE_INVOICE_LIMIT } from "../lib/pro";
@@ -18,11 +18,15 @@ const RECURRING_LABELS: Record<RecurringFreq, string> = {
   none: "", monthly: "🔁 Mensuelle", quarterly: "🔁 Trimestrielle", yearly: "🔁 Annuelle",
 };
 
+type StatusFilter = "all" | "paid" | "pending" | "overdue";
+
 export default function InvoicesPage() {
   const { tr } = useLang();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
   const [client, setClient] = useState({ name: "", email: "" });
@@ -47,6 +51,32 @@ export default function InvoicesPage() {
   function markAsPaid(id: string) {
     persist(invoices.map(i => i.id === id ? { ...i, status: "paid" as const } : i));
     showToast("✓ Facture marquée comme payée !");
+  }
+
+  function deleteInvoice(id: string) {
+    persist(invoices.filter(i => i.id !== id));
+    showToast("Facture supprimée");
+  }
+
+  function duplicateInvoice(inv: Invoice) {
+    const dup: Invoice = {
+      ...inv,
+      id: `INV-${String(invoices.length + 1).padStart(3, "0")}`,
+      status: "pending",
+      date: new Date().toISOString().split("T")[0],
+      lines: inv.lines.map(l => ({ ...l, id: Date.now().toString() + Math.random() })),
+    };
+    persist([dup, ...invoices]);
+    showToast(`✓ ${dup.id} dupliquée !`);
+  }
+
+  function openEdit(inv: Invoice) {
+    setEditId(inv.id);
+    setClient({ name: inv.client, email: inv.email });
+    setLines(inv.lines.map(l => ({ ...l })));
+    setDue(inv.due);
+    setRecurring(inv.recurring);
+    setShowModal(true);
   }
 
   function sendReminder(inv: Invoice) {
@@ -94,7 +124,7 @@ export default function InvoicesPage() {
 
   function handleNewInvoice() {
     if (!pro && invoices.length >= FREE_INVOICE_LIMIT) setShowUpgrade(true);
-    else { setClient({ name: "", email: "" }); setLines([newLine()]); setDue(""); setRecurring("none"); setShowModal(true); }
+    else { setEditId(null); setClient({ name: "", email: "" }); setLines([newLine()]); setDue(""); setRecurring("none"); setShowModal(true); }
   }
 
   // Line helpers
@@ -107,25 +137,39 @@ export default function InvoicesPage() {
     setShowCatalog(false);
   }
 
-  function createInvoice(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const totalHT = invoiceTotalHT(lines);
-    const newInv: Invoice = {
-      id: `INV-${String(invoices.length + 1).padStart(3, "0")}`,
-      client: client.name, email: client.email,
-      lines, amount: totalHT, status: "pending",
-      date: new Date().toISOString().split("T")[0],
-      due, vatRate: lines[0]?.vatRate ?? 21, recurring,
-    };
-    persist([newInv, ...invoices]);
+    if (editId) {
+      // Update existing invoice
+      const updated = invoices.map(i => i.id === editId ? {
+        ...i,
+        client: client.name, email: client.email,
+        lines, amount: totalHT,
+        due, vatRate: lines[0]?.vatRate ?? 21, recurring,
+      } : i);
+      persist(updated);
+      showToast("✓ Facture modifiée !");
+    } else {
+      // Create new invoice
+      const newInv: Invoice = {
+        id: `INV-${String(invoices.length + 1).padStart(3, "0")}`,
+        client: client.name, email: client.email,
+        lines, amount: totalHT, status: "pending",
+        date: new Date().toISOString().split("T")[0],
+        due, vatRate: lines[0]?.vatRate ?? 21, recurring,
+      };
+      persist([newInv, ...invoices]);
+      showToast(tr("invoiceCreated"));
+    }
     setShowModal(false);
-    showToast(tr("invoiceCreated"));
   }
 
-  const filtered = invoices.filter(inv =>
-    inv.client.toLowerCase().includes(search.toLowerCase()) ||
-    inv.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = invoices.filter(inv => {
+    const matchSearch = inv.client.toLowerCase().includes(search.toLowerCase()) || inv.id.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "all" || inv.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   const total   = invoices.reduce((s, i) => s + i.amount, 0);
   const paid    = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
@@ -136,6 +180,13 @@ export default function InvoicesPage() {
     pending: { label: tr("pending"), className: "status-pending" },
     overdue: { label: tr("overdue"), className: "status-overdue" },
   };
+
+  const FILTERS: { key: StatusFilter; label: string; count: number }[] = [
+    { key: "all",     label: "Toutes",      count: invoices.length },
+    { key: "pending", label: tr("pending"), count: invoices.filter(i => i.status === "pending").length },
+    { key: "overdue", label: tr("overdue"), count: invoices.filter(i => i.status === "overdue").length },
+    { key: "paid",    label: tr("paid"),    count: invoices.filter(i => i.status === "paid").length },
+  ];
 
   const totalHT  = invoiceTotalHT(lines);
   const totalTVA = invoiceTotalTVA(lines);
@@ -189,7 +240,8 @@ export default function InvoicesPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        {/* KPIs */}
+        <div className="grid grid-cols-3 gap-4 mb-5">
           {[
             { label: tr("totalBilled"), value: total,   color: "text-slate-900" },
             { label: tr("collected"),   value: paid,    color: "text-emerald-600" },
@@ -202,10 +254,22 @@ export default function InvoicesPage() {
           ))}
         </div>
 
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={tr("search")}
-            className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
+        {/* Filters + Search */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="flex gap-1.5 bg-white border border-slate-200 rounded-xl p-1">
+            {FILTERS.map(f => (
+              <button key={f.key} onClick={() => setStatusFilter(f.key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${statusFilter === f.key ? "gradient-btn text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+                {f.label}
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${statusFilter === f.key ? "bg-white/30 text-white" : "bg-slate-100 text-slate-500"}`}>{f.count}</span>
+              </button>
+            ))}
+          </div>
+          <div className="relative flex-1 min-w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={tr("search")}
+              className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
+          </div>
         </div>
 
         <div className="card overflow-hidden">
@@ -245,6 +309,8 @@ export default function InvoicesPage() {
                       {inv.status !== "paid" && (
                         <button onClick={() => markAsPaid(inv.id)} title="Marquer payée" className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><CheckCircle2 className="w-3.5 h-3.5" /></button>
                       )}
+                      <button onClick={() => openEdit(inv)} title="Modifier" className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => duplicateInvoice(inv)} title="Dupliquer" className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"><Copy className="w-3.5 h-3.5" /></button>
                       {inv.email && inv.status !== "paid" && (
                         <button onClick={() => sendReminder(inv)} title="Envoyer rappel" className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Mail className="w-3.5 h-3.5" /></button>
                       )}
@@ -254,6 +320,7 @@ export default function InvoicesPage() {
                         <button onClick={() => doGenerateNext(inv)} title={tr("generateNext")} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><RefreshCw className="w-3.5 h-3.5" /></button>
                       )}
                       <button onClick={() => printInvoice(inv)} title="PDF" className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => deleteInvoice(inv.id)} title="Supprimer" className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>
                 </tr>
@@ -264,15 +331,28 @@ export default function InvoicesPage() {
         </div>
       </main>
 
-      {/* Create invoice modal */}
+      {/* Upgrade modal */}
+      {showUpgrade && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+          <div className="card w-full max-w-sm p-6 text-center shadow-2xl">
+            <Lock className="w-10 h-10 text-amber-400 mx-auto mb-3" />
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Limite atteinte</h2>
+            <p className="text-sm text-slate-500 mb-5">Passez à Cashly Pro pour créer des factures illimitées.</p>
+            <UpgradeButton label="Passer Pro — 19 €/mois" className="gradient-btn w-full font-semibold py-3 rounded-xl text-white flex items-center justify-center gap-2" />
+            <button onClick={() => setShowUpgrade(false)} className="mt-3 text-sm text-slate-400 hover:text-slate-600">{tr("cancel")}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Create / Edit invoice modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-2xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-900">{tr("newInvoiceTitle")}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{editId ? "Modifier la facture" : tr("newInvoiceTitle")}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
-            <form onSubmit={createInvoice} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* Client */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -315,7 +395,6 @@ export default function InvoicesPage() {
                   </button>
                 </div>
 
-                {/* Catalog dropdown */}
                 {showCatalog && services.length > 0 && (
                   <div className="mb-3 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                     {services.map(s => (
@@ -364,7 +443,6 @@ export default function InvoicesPage() {
                   <Plus className="w-3.5 h-3.5" /> Ajouter une ligne
                 </button>
 
-                {/* Totals */}
                 <div className="mt-3 bg-slate-50 rounded-xl p-3 space-y-1 text-xs">
                   <div className="flex justify-between text-slate-600"><span>Sous-total HT</span><span>{totalHT.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
                   <div className="flex justify-between text-slate-600"><span>TVA</span><span>{totalTVA.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
@@ -394,22 +472,11 @@ export default function InvoicesPage() {
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>
-                <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">{tr("createInvoice")}</button>
+                <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">
+                  {editId ? "Enregistrer les modifications" : tr("createInvoice")}
+                </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Upgrade modal */}
-      {showUpgrade && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-          <div className="card w-full max-w-sm p-8 shadow-2xl text-center">
-            <div className="w-14 h-14 gradient-btn rounded-2xl flex items-center justify-center mx-auto mb-4"><Lock className="w-7 h-7 text-white" /></div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Limite atteinte</h2>
-            <p className="text-slate-500 text-sm mb-6">Le plan gratuit est limité à <strong>{FREE_INVOICE_LIMIT} factures</strong>.</p>
-            <UpgradeButton label="Passer Pro — 19€/mois" className="gradient-btn w-full font-semibold py-3 rounded-xl text-white mb-3" />
-            <button onClick={() => setShowUpgrade(false)} className="text-sm text-slate-400 hover:text-slate-600 w-full py-2">Annuler</button>
           </div>
         </div>
       )}

@@ -1,10 +1,84 @@
 "use client";
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
-import { Plus, Search, ClipboardList, X, Check, ChevronDown, ArrowRight, FileText } from "lucide-react";
+import { Plus, Search, ClipboardList, X, Check, ChevronDown, ArrowRight, FileText, Download, Pencil, Trash2 } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { getQuotes, saveQuotes, getInvoices, saveInvoices, Quote, QuoteStatus } from "../lib/storage";
 import { getSavedClients, Client } from "../clients/page";
+import { getCompanySettings } from "../settings/page";
+
+function printQuote(q: Quote) {
+  const company = getCompanySettings();
+  const vatAmt = q.amount * q.vatRate / 100;
+  const ttc = q.amount + vatAmt;
+  const STATUS: Record<QuoteStatus, string> = { draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", refused: "Refusé" };
+  const STATUS_COLOR: Record<QuoteStatus, string> = { draft: "#94a3b8", sent: "#0ea5e9", accepted: "#10b981", refused: "#ef4444" };
+
+  const companyBlock = company.name
+    ? `<div class="company"><div class="company-name">${company.name}</div>${company.address ? `<div>${company.address}</div>` : ""}${company.city ? `<div>${company.city}</div>` : ""}${company.vat ? `<div>TVA: ${company.vat}</div>` : ""}${company.email ? `<div>${company.email}</div>` : ""}</div>`
+    : `<div class="company"><div class="company-name">Votre Entreprise</div></div>`;
+
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/><title>Devis ${q.id}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1e293b;background:white;padding:40px;font-size:14px}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:48px}
+    .logo{font-size:24px;font-weight:800;background:linear-gradient(135deg,#10b981,#0ea5e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .ref{text-align:right}.ref-num{font-size:22px;font-weight:700;color:#1e293b}.ref-date{color:#64748b;font-size:13px;margin-top:4px}
+    .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;color:white;background:${STATUS_COLOR[q.status]};margin-top:8px}
+    .divider{height:2px;background:linear-gradient(90deg,#10b981,#0ea5e9);border-radius:1px;margin-bottom:32px}
+    .parties{display:flex;justify-content:space-between;margin-bottom:40px}
+    .company{line-height:1.7;color:#475569}.company-name{font-size:16px;font-weight:700;color:#1e293b;margin-bottom:4px}
+    .label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;font-weight:600;margin-bottom:8px}
+    table{width:100%;border-collapse:collapse;margin-bottom:32px}
+    th{text-align:left;padding:12px 16px;background:#f8fafc;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0}
+    td{padding:16px;border-bottom:1px solid #f1f5f9;font-size:13px}
+    .totals{display:flex;justify-content:flex-end;margin-bottom:24px}
+    .totals-table{width:280px}.totals-row{display:flex;justify-content:space-between;padding:8px 0;color:#64748b;border-bottom:1px solid #f1f5f9}
+    .totals-final{display:flex;justify-content:space-between;padding:12px 16px;background:#f8fafc;border-radius:12px;margin-top:8px;font-weight:700;font-size:16px}
+    .validity{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:24px;font-size:13px;color:#166534;line-height:1.8}
+    .footer{margin-top:40px;text-align:center;font-size:12px;color:#94a3b8}
+    @media print{body{padding:0}}
+  </style></head><body>
+  <div class="header">
+    <div class="logo">Cashly</div>
+    <div class="ref">
+      <div class="ref-num">DEVIS ${q.id}</div>
+      <div class="ref-date">Émis le ${q.date}</div>
+      <div class="ref-date">Valable jusqu'au : ${q.due}</div>
+      <div class="badge">${STATUS[q.status]}</div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="parties">
+    <div><div class="label">De</div>${companyBlock}</div>
+    <div><div class="label">Destinataire</div>
+      <div class="company"><div class="company-name">${q.client}</div>${q.email ? `<div>${q.email}</div>` : ""}</div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th style="width:60%">Description</th><th style="text-align:right">Montant HT</th><th style="text-align:right">TVA</th><th style="text-align:right">Total TTC</th></tr></thead>
+    <tbody><tr>
+      <td><div style="font-weight:600;color:#1e293b">${q.description || "Prestation de services"}</div></td>
+      <td style="text-align:right">${q.amount.toLocaleString("fr-FR",{minimumFractionDigits:2})} €</td>
+      <td style="text-align:right;color:#64748b">${q.vatRate}%</td>
+      <td style="text-align:right;font-weight:600">${ttc.toLocaleString("fr-FR",{minimumFractionDigits:2})} €</td>
+    </tr></tbody>
+  </table>
+  <div class="totals"><div class="totals-table">
+    <div class="totals-row"><span>Sous-total HT</span><span>${q.amount.toLocaleString("fr-FR",{minimumFractionDigits:2})} €</span></div>
+    <div class="totals-row"><span>TVA (${q.vatRate}%)</span><span>${vatAmt.toLocaleString("fr-FR",{minimumFractionDigits:2})} €</span></div>
+    <div class="totals-final"><span>Total TTC</span><span>${ttc.toLocaleString("fr-FR",{minimumFractionDigits:2})} €</span></div>
+  </div></div>
+  <div class="validity"><strong>Conditions</strong><br/>Ce devis est valable jusqu'au ${q.due}. Merci de nous retourner ce document signé pour acceptation.</div>
+  <div class="footer">Généré par Cashly · cashly.app</div>
+</body></html>`;
+
+  const win = window.open("", "_blank", "width=900,height=700");
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 300);
+}
 
 const EMPTY_FORM = { client: "", email: "", amount: "", due: "", vatRate: "21", description: "" };
 
@@ -13,6 +87,7 @@ export default function QuotesPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [toast, setToast] = useState("");
   const [savedClients, setSavedClients] = useState<Client[]>([]);
@@ -27,27 +102,44 @@ export default function QuotesPage() {
     q.id.toLowerCase().includes(search.toLowerCase())
   );
 
-  function createQuote(e: React.FormEvent) {
+  function openCreate() { setEditId(null); setForm(EMPTY_FORM); setShowModal(true); }
+  function openEdit(q: Quote) {
+    setEditId(q.id);
+    setForm({ client: q.client, email: q.email, amount: q.amount.toString(), due: q.due, vatRate: q.vatRate.toString(), description: q.description });
+    setShowModal(true);
+  }
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const newQ: Quote = {
-      id: `DEV-${String(quotes.length + 1).padStart(3, "0")}`,
-      client: form.client, email: form.email,
-      amount: parseFloat(form.amount),
-      status: "draft",
-      date: new Date().toISOString().split("T")[0],
-      due: form.due,
-      vatRate: parseFloat(form.vatRate),
-      description: form.description,
-    };
-    const updated = [newQ, ...quotes];
-    setQuotes(updated); saveQuotes(updated);
+    if (editId) {
+      const updated = quotes.map(q => q.id === editId ? { ...q, client: form.client, email: form.email, amount: parseFloat(form.amount), due: form.due, vatRate: parseFloat(form.vatRate), description: form.description } : q);
+      setQuotes(updated); saveQuotes(updated);
+      showToast("✓ Devis modifié !");
+    } else {
+      const newQ: Quote = {
+        id: `DEV-${String(quotes.length + 1).padStart(3, "0")}`,
+        client: form.client, email: form.email,
+        amount: parseFloat(form.amount),
+        status: "draft",
+        date: new Date().toISOString().split("T")[0],
+        due: form.due, vatRate: parseFloat(form.vatRate), description: form.description,
+      };
+      const updated = [newQ, ...quotes];
+      setQuotes(updated); saveQuotes(updated);
+      showToast(tr("quoteCreated"));
+    }
     setShowModal(false); setForm(EMPTY_FORM);
-    showToast(tr("quoteCreated"));
   }
 
   function updateStatus(id: string, status: QuoteStatus) {
     const updated = quotes.map(q => q.id === id ? { ...q, status } : q);
     setQuotes(updated); saveQuotes(updated);
+  }
+
+  function deleteQuote(id: string) {
+    const updated = quotes.filter(q => q.id !== id);
+    setQuotes(updated); saveQuotes(updated);
+    showToast("Devis supprimé");
   }
 
   function convertToInvoice(q: Quote) {
@@ -73,13 +165,6 @@ export default function QuotesPage() {
     refused:  "bg-red-100 text-red-600",
   };
 
-  const STATUS_LABEL: Record<QuoteStatus, string> = {
-    draft:    tr("quoteDraft"),
-    sent:     tr("quoteSent"),
-    accepted: tr("quoteAccepted"),
-    refused:  tr("quoteRefused"),
-  };
-
   const totalAccepted = quotes.filter(q => q.status === "accepted").reduce((s, q) => s + q.amount, 0);
   const totalPending  = quotes.filter(q => q.status === "sent").reduce((s, q) => s + q.amount, 0);
 
@@ -100,7 +185,7 @@ export default function QuotesPage() {
             </h1>
             <p className="text-slate-500 text-sm mt-1">{tr("quotesSub")}</p>
           </div>
-          <button onClick={() => setShowModal(true)} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
+          <button onClick={openCreate} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
             <Plus className="w-4 h-4" /> {tr("newQuote")}
           </button>
         </div>
@@ -111,7 +196,7 @@ export default function QuotesPage() {
             { label: tr("quotesTitle"), value: quotes.length, color: "text-slate-900" },
             { label: tr("quoteSent"),   value: quotes.filter(q => q.status === "sent").length, color: "text-sky-600" },
             { label: tr("quoteAccepted") + " (€)", value: totalAccepted.toLocaleString("fr-FR") + " €", color: "text-emerald-600" },
-            { label: tr("quoteSent") + " (€)",     value: totalPending.toLocaleString("fr-FR") + " €",  color: "text-amber-600" },
+            { label: "En attente (€)",   value: totalPending.toLocaleString("fr-FR") + " €",  color: "text-amber-600" },
           ].map(({ label, value, color }) => (
             <div key={label} className="card p-4">
               <p className="text-xs text-slate-400 mb-1">{label}</p>
@@ -161,17 +246,22 @@ export default function QuotesPage() {
                       </select>
                     </td>
                     <td className="px-4 py-3">
-                      {q.status !== "refused" && q.status !== "accepted" && (
-                        <button onClick={() => convertToInvoice(q)} title={tr("convertToInvoice")}
-                          className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">
-                          <FileText className="w-3 h-3" /> <ArrowRight className="w-3 h-3" />
-                        </button>
-                      )}
-                      {q.status === "accepted" && (
-                        <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Converti
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {q.status !== "refused" && q.status !== "accepted" && (
+                          <button onClick={() => convertToInvoice(q)} title={tr("convertToInvoice")}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button onClick={() => openEdit(q)} title="Modifier" className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => printQuote(q)} title="PDF" className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => deleteQuote(q.id)} title="Supprimer" className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                        {q.status === "accepted" && (
+                          <span className="text-xs text-emerald-600 font-medium flex items-center gap-1 ml-1">
+                            <Check className="w-3 h-3" /> Converti
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -182,7 +272,7 @@ export default function QuotesPage() {
             <div className="text-center py-12">
               <ClipboardList className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               <p className="text-slate-400 font-medium">{tr("noQuote")}</p>
-              <button onClick={() => setShowModal(true)} className="mt-4 gradient-btn text-sm font-semibold px-5 py-2 rounded-xl text-white inline-flex items-center gap-2">
+              <button onClick={openCreate} className="mt-4 gradient-btn text-sm font-semibold px-5 py-2 rounded-xl text-white inline-flex items-center gap-2">
                 <Plus className="w-4 h-4" /> {tr("newQuote")}
               </button>
             </div>
@@ -190,15 +280,15 @@ export default function QuotesPage() {
         </div>
       </main>
 
-      {/* Modal */}
+      {/* Modal create / edit */}
       {showModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-900">{tr("newQuoteTitle")}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{editId ? "Modifier le devis" : tr("newQuoteTitle")}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
-            <form onSubmit={createQuote} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Client dropdown */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("clientName")} *</label>
@@ -266,7 +356,9 @@ export default function QuotesPage() {
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>
-                <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">{tr("newQuote")}</button>
+                <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">
+                  {editId ? "Enregistrer" : tr("newQuote")}
+                </button>
               </div>
             </form>
           </div>

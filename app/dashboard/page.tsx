@@ -6,7 +6,22 @@ import { useLang } from "../context/LangContext";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { activatePro } from "../lib/pro";
-import { getDashboardStats, Invoice, Expense } from "../lib/storage";
+import { getDashboardStats, getInvoices, getExpenses, Invoice, Expense } from "../lib/storage";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+
+function buildMonthly() {
+  const invoices = getInvoices();
+  const expenses = getExpenses();
+  const now = new Date();
+  return Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("fr-FR", { month: "short" });
+    const revenus  = invoices.filter(inv => inv.status === "paid" && inv.date.startsWith(key)).reduce((s, inv) => s + inv.amount, 0);
+    const depenses = expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + e.amount, 0);
+    return { month: label.charAt(0).toUpperCase() + label.slice(1, 3), revenus, depenses };
+  });
+}
 
 function DashboardContent() {
   const { tr } = useLang();
@@ -14,10 +29,12 @@ function DashboardContent() {
   const upgraded = searchParams.get("upgraded") === "true";
 
   const [stats, setStats] = useState({ revenue: 0, totalExp: 0, netProfit: 0, unpaidAmt: 0, unpaidCount: 0, recentInvoices: [] as Invoice[], recentExpenses: [] as Expense[] });
+  const [monthly, setMonthly] = useState<{ month: string; revenus: number; depenses: number }[]>([]);
 
   useEffect(() => {
     if (upgraded) activatePro();
     setStats(getDashboardStats());
+    setMonthly(buildMonthly());
   }, [upgraded]);
 
   const STATUS_MAP = {
@@ -49,7 +66,7 @@ function DashboardContent() {
           </Link>
         </div>
 
-        {/* Real KPIs */}
+        {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
             { label: tr("revenue"),       value: fmt(stats.revenue),    sub: `${stats.recentInvoices.filter(i=>i.status==="paid").length} factures payées`, up: true,  icon: TrendingUp,   color: "text-emerald-600", bg: "bg-emerald-50" },
@@ -70,8 +87,41 @@ function DashboardContent() {
           ))}
         </div>
 
+        {/* Revenue chart */}
+        <div className="card p-6 mb-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="font-semibold text-slate-900">Revenus vs Dépenses</h2>
+              <p className="text-xs text-slate-400 mt-0.5">6 derniers mois</p>
+            </div>
+            <Link href="/reports" className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
+              Voir les rapports <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={monthly} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gDep" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f87171" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickFormatter={v => v > 0 ? `${(v/1000).toFixed(0)}k€` : "0"} width={36} />
+              <Tooltip formatter={(v) => `${Number(v).toLocaleString("fr-FR")} €`} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
+              <Area type="monotone" dataKey="revenus"  name="Revenus"  stroke="#10b981" strokeWidth={2} fill="url(#gRev)" dot={{ fill: "#10b981", r: 3 }} />
+              <Area type="monotone" dataKey="depenses" name="Dépenses" stroke="#f87171" strokeWidth={2} fill="url(#gDep)" dot={{ fill: "#f87171", r: 3 }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Recent invoices — real data */}
+          {/* Recent invoices */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-semibold text-slate-900 flex items-center gap-2">
@@ -100,7 +150,7 @@ function DashboardContent() {
             </div>
           </div>
 
-          {/* Recent expenses — real data */}
+          {/* Recent expenses */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-semibold text-slate-900 flex items-center gap-2">

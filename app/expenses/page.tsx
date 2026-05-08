@@ -2,7 +2,7 @@
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
 import { getExpenses, saveExpenses } from "../lib/storage";
-import { Plus, Search, Receipt, X, Check } from "lucide-react";
+import { Plus, Search, Receipt, X, Check, Pencil, Trash2 } from "lucide-react";
 import { useLang } from "../context/LangContext";
 
 type Expense = { id: number; label: string; amount: number; category: string; date: string; note: string; };
@@ -22,14 +22,7 @@ const CAT_COLORS: Record<string, string> = {
   Autre: "bg-gray-100 text-gray-700", Other: "bg-gray-100 text-gray-700", Overig: "bg-gray-100 text-gray-700",
 };
 
-const INITIAL: Expense[] = [
-  { id: 1, label: "Adobe Creative Cloud",     amount: 54.99,  category: "Logiciels",      date: "2025-04-30", note: "" },
-  { id: 2, label: "Déplacement client Paris", amount: 87.50,  category: "Transport",       date: "2025-04-28", note: "TGV A/R" },
-  { id: 3, label: "Hébergement serveur",       amount: 29.00,  category: "Infrastructure", date: "2025-04-27", note: "Vercel Pro" },
-  { id: 4, label: "Google Ads",               amount: 150.00, category: "Marketing",       date: "2025-04-25", note: "" },
-  { id: 5, label: "Imprimante cartouches",    amount: 34.90,  category: "Fournitures",     date: "2025-04-20", note: "" },
-  { id: 6, label: "Formation UX Design",      amount: 299.00, category: "Formation",       date: "2025-04-15", note: "Udemy" },
-];
+const EMPTY_FORM = { label: "", amount: "", category: "", date: "", note: "" };
 
 export default function ExpensesPage() {
   const { lang, tr } = useLang();
@@ -38,10 +31,25 @@ export default function ExpensesPage() {
   const [search, setSearch]       = useState("");
   const [filterCat, setFilterCat] = useState("all");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm]           = useState({ label: "", amount: "", category: "", date: "", note: "" });
-  const [saved, setSaved]         = useState(false);
+  const [editId, setEditId]       = useState<number | null>(null);
+  const [form, setForm]           = useState(EMPTY_FORM);
+  const [toast, setToast]         = useState("");
 
   const CATEGORIES = lang === "nl" ? CATEGORIES_NL : lang === "en" ? CATEGORIES_EN : CATEGORIES_FR;
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000); }
+
+  function openCreate() {
+    setEditId(null);
+    setForm({ ...EMPTY_FORM, category: CATEGORIES[0] });
+    setShowModal(true);
+  }
+
+  function openEdit(exp: Expense) {
+    setEditId(exp.id);
+    setForm({ label: exp.label, amount: exp.amount.toString(), category: exp.category, date: exp.date, note: exp.note });
+    setShowModal(true);
+  }
 
   const filtered = expenses.filter(e =>
     (filterCat === "all" || e.category === filterCat) &&
@@ -50,14 +58,27 @@ export default function ExpensesPage() {
 
   const total = filtered.reduce((s, e) => s + e.amount, 0);
 
-  function addExpense(ev: React.FormEvent) {
+  function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault();
-    const updated = [{ id: Date.now(), label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORIES[0], date: form.date, note: form.note }, ...expenses];
+    let updated: Expense[];
+    if (editId !== null) {
+      updated = expenses.map(e => e.id === editId
+        ? { ...e, label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORIES[0], date: form.date, note: form.note }
+        : e
+      );
+      showToast("✓ Dépense modifiée !");
+    } else {
+      updated = [{ id: Date.now(), label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORIES[0], date: form.date, note: form.note }, ...expenses];
+      showToast(tr("expenseAdded"));
+    }
     setExpenses(updated); saveExpenses(updated);
-    setShowModal(false);
-    setForm({ label: "", amount: "", category: "", date: "", note: "" });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setShowModal(false); setForm(EMPTY_FORM);
+  }
+
+  function deleteExpense(id: number) {
+    const updated = expenses.filter(e => e.id !== id);
+    setExpenses(updated); saveExpenses(updated);
+    showToast("Dépense supprimée");
   }
 
   return (
@@ -71,16 +92,23 @@ export default function ExpensesPage() {
             </h1>
             <p className="text-slate-500 text-sm mt-1">{tr("expensesSub")}</p>
           </div>
-          <button onClick={() => setShowModal(true)} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
+          <button onClick={openCreate} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
             <Plus className="w-4 h-4" /> {tr("add")}
           </button>
         </div>
 
-        {saved && (
+        {toast && (
           <div className="fixed top-6 right-6 z-50 bg-emerald-500 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium">
-            <Check className="w-4 h-4" /> {tr("expenseAdded")}
+            <Check className="w-4 h-4" /> {toast}
           </div>
         )}
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 mb-5">
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">Total dépenses</p><p className="text-xl font-bold text-slate-900">{expenses.length}</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">Total montant</p><p className="text-xl font-bold text-red-500">-{expenses.reduce((s,e)=>s+e.amount,0).toLocaleString("fr-FR",{minimumFractionDigits:2})} €</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">Ce mois</p><p className="text-xl font-bold text-amber-600">-{expenses.filter(e=>e.date.startsWith(new Date().toISOString().slice(0,7))).reduce((s,e)=>s+e.amount,0).toLocaleString("fr-FR",{minimumFractionDigits:2})} €</p></div>
+        </div>
 
         <div className="flex flex-wrap gap-3 mb-4">
           <div className="relative flex-1 min-w-48">
@@ -118,6 +146,10 @@ export default function ExpensesPage() {
                 <div className="flex items-center gap-3">
                   <span className={`badge ${CAT_COLORS[exp.category] || "bg-gray-100 text-gray-700"}`}>{exp.category}</span>
                   <span className="text-sm font-semibold text-red-500 min-w-20 text-right">-{exp.amount.toFixed(2)} €</span>
+                  <div className="flex gap-1">
+                    <button onClick={() => openEdit(exp)} className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => deleteExpense(exp.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -130,10 +162,10 @@ export default function ExpensesPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-900">{tr("addExpenseTitle")}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{editId !== null ? "Modifier la dépense" : tr("addExpenseTitle")}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
-            <form onSubmit={addExpense} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("description")} *</label>
                 <input required value={form.label} onChange={e => setForm({...form, label: e.target.value})}
@@ -165,7 +197,9 @@ export default function ExpensesPage() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>
-                <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">{tr("add")}</button>
+                <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">
+                  {editId !== null ? "Enregistrer" : tr("add")}
+                </button>
               </div>
             </form>
           </div>
