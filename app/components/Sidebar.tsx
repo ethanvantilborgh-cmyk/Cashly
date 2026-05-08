@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { TrendingUp, LayoutDashboard, FileText, Receipt, BarChart2, Settings, LogOut, Crown, Users, ClipboardList } from "lucide-react";
+import { TrendingUp, LayoutDashboard, FileText, Receipt, BarChart2, Settings, LogOut, Crown, Users, ClipboardList, Package } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { Lang } from "../lib/translations";
 import UpgradeButton from "./UpgradeButton";
@@ -26,6 +26,7 @@ export default function Sidebar() {
     { href: "/quotes",    icon: ClipboardList,    label: tr("quotes") },
     { href: "/clients",   icon: Users,             label: tr("clients") },
     { href: "/expenses",  icon: Receipt,           label: tr("expenses") },
+    { href: "/services",  icon: Package,           label: tr("services") },
     { href: "/reports",   icon: BarChart2,         label: tr("reports") },
   ];
 

@@ -1,13 +1,18 @@
 "use client";
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
-import { Plus, Search, FileText, Download, X, Check, Lock, Crown, ChevronDown, CheckCircle2, Link2, Mail, FileDown, RefreshCw } from "lucide-react";
+import { Plus, Search, FileText, Download, X, Check, Lock, Crown, ChevronDown, CheckCircle2, Link2, Mail, FileDown, RefreshCw, Trash2, Package } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { printInvoice } from "../lib/printInvoice";
 import { isPro, FREE_INVOICE_LIMIT } from "../lib/pro";
 import UpgradeButton from "../components/UpgradeButton";
 import { getSavedClients, Client } from "../clients/page";
-import { getInvoices, saveInvoices, Invoice, RecurringFreq, generateNextInvoice, nextRecurringDate } from "../lib/storage";
+import {
+  getInvoices, saveInvoices, getServices,
+  Invoice, InvoiceLine, RecurringFreq, Service,
+  newLine, lineHT, lineTVA, invoiceTotalHT, invoiceTotalTVA, invoiceTotalTTC,
+  generateNextInvoice, nextRecurringDate,
+} from "../lib/storage";
 
 const RECURRING_LABELS: Record<RecurringFreq, string> = {
   none: "", monthly: "🔁 Mensuelle", quarterly: "🔁 Trimestrielle", yearly: "🔁 Annuelle",
@@ -19,17 +24,21 @@ export default function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
-  const [form, setForm] = useState({ client: "", email: "", amount: "", due: "", vatRate: "21", recurring: "none" as RecurringFreq });
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [client, setClient] = useState({ name: "", email: "" });
+  const [lines, setLines] = useState<InvoiceLine[]>([newLine()]);
+  const [due, setDue] = useState("");
+  const [recurring, setRecurring] = useState<RecurringFreq>("none");
   const [pro, setPro] = useState(false);
   const [savedClients, setSavedClients] = useState<Client[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [showClientDrop, setShowClientDrop] = useState(false);
   const [toast, setToast] = useState("");
   const [payLoading, setPayLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    setPro(isPro());
-    setSavedClients(getSavedClients());
-    setInvoices(getInvoices());
+    setPro(isPro()); setSavedClients(getSavedClients());
+    setInvoices(getInvoices()); setServices(getServices());
   }, []);
 
   function persist(updated: Invoice[]) { setInvoices(updated); saveInvoices(updated); }
@@ -41,9 +50,9 @@ export default function InvoicesPage() {
   }
 
   function sendReminder(inv: Invoice) {
-    const ttc = (inv.amount * (1 + inv.vatRate / 100)).toLocaleString("fr-FR", { minimumFractionDigits: 2 });
+    const ttc = invoiceTotalTTC(inv.lines).toLocaleString("fr-FR", { minimumFractionDigits: 2 });
     const subject = encodeURIComponent(`Rappel : Facture ${inv.id} — ${ttc} €`);
-    const body = encodeURIComponent(`Bonjour,\n\nNous vous rappelons que la facture ${inv.id} d'un montant de ${ttc} € est arrivée à échéance le ${inv.due}.\n\nMerci de bien vouloir procéder au règlement dans les meilleurs délais.\n\nCordialement`);
+    const body = encodeURIComponent(`Bonjour,\n\nNous vous rappelons que la facture ${inv.id} d'un montant de ${ttc} € est arrivée à échéance le ${inv.due}.\n\nMerci de bien vouloir procéder au règlement.\n\nCordialement`);
     window.open(`mailto:${inv.email}?subject=${subject}&body=${body}`);
   }
 
@@ -68,10 +77,11 @@ export default function InvoicesPage() {
 
   function exportCSV() {
     const rows = [
-      ["Référence","Client","Email","Montant HT","TVA %","Total TTC","Statut","Date","Échéance","Récurrence"],
+      ["Référence","Client","Email","Montant HT","TVA","Total TTC","Statut","Date","Échéance","Récurrence"],
       ...invoices.map(i => {
-        const ttc = i.amount * (1 + i.vatRate / 100);
-        return [i.id, i.client, i.email, i.amount.toFixed(2), i.vatRate + "%", ttc.toFixed(2), i.status, i.date, i.due, i.recurring];
+        const ttc = invoiceTotalTTC(i.lines);
+        const tva = invoiceTotalTVA(i.lines);
+        return [i.id, i.client, i.email, i.amount.toFixed(2), tva.toFixed(2), ttc.toFixed(2), i.status, i.date, i.due, i.recurring];
       }),
     ];
     const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
@@ -84,27 +94,31 @@ export default function InvoicesPage() {
 
   function handleNewInvoice() {
     if (!pro && invoices.length >= FREE_INVOICE_LIMIT) setShowUpgrade(true);
-    else { setForm({ client: "", email: "", amount: "", due: "", vatRate: "21", recurring: "none" }); setShowModal(true); }
+    else { setClient({ name: "", email: "" }); setLines([newLine()]); setDue(""); setRecurring("none"); setShowModal(true); }
   }
 
-  function selectClient(c: Client) {
-    setForm(f => ({ ...f, client: c.name, email: c.email }));
-    setShowClientDrop(false);
+  // Line helpers
+  function updateLine(id: string, key: keyof InvoiceLine, val: string | number) {
+    setLines(ls => ls.map(l => l.id === id ? { ...l, [key]: typeof val === "string" && key !== "description" ? parseFloat(val) || 0 : val } : l));
+  }
+  function removeLine(id: string) { if (lines.length > 1) setLines(ls => ls.filter(l => l.id !== id)); }
+  function addLineFromService(s: Service) {
+    setLines(ls => [...ls.filter(l => l.description || l.unitPrice), { id: Date.now().toString(), description: s.name, qty: 1, unitPrice: s.unitPrice, vatRate: s.vatRate }]);
+    setShowCatalog(false);
   }
 
   function createInvoice(e: React.FormEvent) {
     e.preventDefault();
+    const totalHT = invoiceTotalHT(lines);
     const newInv: Invoice = {
       id: `INV-${String(invoices.length + 1).padStart(3, "0")}`,
-      client: form.client, email: form.email,
-      amount: parseFloat(form.amount), status: "pending",
+      client: client.name, email: client.email,
+      lines, amount: totalHT, status: "pending",
       date: new Date().toISOString().split("T")[0],
-      due: form.due, vatRate: parseFloat(form.vatRate),
-      recurring: form.recurring,
+      due, vatRate: lines[0]?.vatRate ?? 21, recurring,
     };
     persist([newInv, ...invoices]);
     setShowModal(false);
-    setForm({ client: "", email: "", amount: "", due: "", vatRate: "21", recurring: "none" });
     showToast(tr("invoiceCreated"));
   }
 
@@ -122,6 +136,10 @@ export default function InvoicesPage() {
     pending: { label: tr("pending"), className: "status-pending" },
     overdue: { label: tr("overdue"), className: "status-overdue" },
   };
+
+  const totalHT  = invoiceTotalHT(lines);
+  const totalTVA = invoiceTotalTVA(lines);
+  const totalTTC = invoiceTotalTTC(lines);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -150,7 +168,6 @@ export default function InvoicesPage() {
           </div>
         </div>
 
-        {/* Free plan limit bar */}
         {!pro && (
           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4">
             <div className="flex-1">
@@ -172,7 +189,6 @@ export default function InvoicesPage() {
           </div>
         )}
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           {[
             { label: tr("totalBilled"), value: total,   color: "text-slate-900" },
@@ -186,19 +202,17 @@ export default function InvoicesPage() {
           ))}
         </div>
 
-        {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={tr("search")}
             className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
         </div>
 
-        {/* Table */}
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                {[tr("reference"), tr("client"), tr("amountHT"), tr("vatRate"), tr("amountTTC"), tr("dueDate"), tr("status"), tr("actions")].map(h => (
+                {[tr("reference"), tr("client"), "Lignes", tr("amountHT"), tr("amountTTC"), tr("dueDate"), tr("status"), tr("actions")].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -208,17 +222,15 @@ export default function InvoicesPage() {
                 <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-4 py-3">
                     <p className="font-mono text-xs text-slate-500">{inv.id}</p>
-                    {inv.recurring !== "none" && (
-                      <p className="text-xs text-emerald-600 font-medium mt-0.5">{RECURRING_LABELS[inv.recurring]}</p>
-                    )}
+                    {inv.recurring !== "none" && <p className="text-xs text-emerald-600 font-medium mt-0.5">{RECURRING_LABELS[inv.recurring]}</p>}
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-slate-900">{inv.client}</p>
                     <p className="text-xs text-slate-400">{inv.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{inv.amount.toLocaleString()} €</td>
-                  <td className="px-4 py-3 text-slate-500">{inv.vatRate}%</td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">{(inv.amount * (1 + inv.vatRate / 100)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{inv.lines.length} ligne{inv.lines.length > 1 ? "s" : ""}</td>
+                  <td className="px-4 py-3 text-slate-700">{invoiceTotalHT(inv.lines).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
+                  <td className="px-4 py-3 font-semibold text-slate-900">{invoiceTotalTTC(inv.lines).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
                   <td className="px-4 py-3">
                     <p className="text-slate-500">{inv.due}</p>
                     {inv.recurring !== "none" && nextRecurringDate(inv) && (
@@ -231,32 +243,17 @@ export default function InvoicesPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       {inv.status !== "paid" && (
-                        <button onClick={() => markAsPaid(inv.id)} title="Marquer payée"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                        </button>
+                        <button onClick={() => markAsPaid(inv.id)} title="Marquer payée" className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><CheckCircle2 className="w-3.5 h-3.5" /></button>
                       )}
                       {inv.email && inv.status !== "paid" && (
-                        <button onClick={() => sendReminder(inv)} title="Envoyer rappel"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors">
-                          <Mail className="w-3.5 h-3.5" />
-                        </button>
+                        <button onClick={() => sendReminder(inv)} title="Envoyer rappel" className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Mail className="w-3.5 h-3.5" /></button>
                       )}
-                      <button onClick={() => copyPaymentLink(inv)} title="Copier lien paiement"
-                        disabled={payLoading === inv.id}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors disabled:opacity-50">
-                        <Link2 className="w-3.5 h-3.5" />
-                      </button>
+                      <button onClick={() => copyPaymentLink(inv)} title="Copier lien paiement" disabled={payLoading === inv.id}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors disabled:opacity-50"><Link2 className="w-3.5 h-3.5" /></button>
                       {inv.recurring !== "none" && (
-                        <button onClick={() => doGenerateNext(inv)} title={tr("generateNext")}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
-                          <RefreshCw className="w-3.5 h-3.5" />
-                        </button>
+                        <button onClick={() => doGenerateNext(inv)} title={tr("generateNext")} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><RefreshCw className="w-3.5 h-3.5" /></button>
                       )}
-                      <button onClick={() => printInvoice(inv)} title="PDF"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
-                        <Download className="w-3.5 h-3.5" />
-                      </button>
+                      <button onClick={() => printInvoice(inv)} title="PDF" className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>
                 </tr>
@@ -270,74 +267,121 @@ export default function InvoicesPage() {
       {/* Create invoice modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-          <div className="card w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="card w-full max-w-2xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-slate-900">{tr("newInvoiceTitle")}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
-            <form onSubmit={createInvoice} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("clientName")} *</label>
-                {savedClients.length > 0 && (
-                  <div className="relative mb-2">
-                    <button type="button" onClick={() => setShowClientDrop(d => !d)}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-left flex items-center justify-between text-slate-500 hover:border-emerald-400 transition-all">
-                      {form.client || tr("selectClient")} <ChevronDown className="w-4 h-4" />
-                    </button>
-                    {showClientDrop && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
-                        {savedClients.map(c => (
-                          <button key={c.id} type="button" onClick={() => selectClient(c)}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-emerald-50 transition-colors border-b border-slate-50 last:border-0">
-                            <p className="font-medium text-slate-900">{c.name}</p>
-                            {c.company && <p className="text-xs text-slate-400">{c.company}</p>}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-                <input required value={form.client} onChange={e => setForm({ ...form, client: e.target.value })}
-                  placeholder={savedClients.length > 0 ? tr("orTypeManually") : ""}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("clientEmail")}</label>
-                <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
-              </div>
+            <form onSubmit={createInvoice} className="space-y-5">
+              {/* Client */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("amountHT")} (€) *</label>
-                  <input required type="number" min="0" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("clientName")} *</label>
+                  {savedClients.length > 0 && (
+                    <div className="relative mb-2">
+                      <button type="button" onClick={() => setShowClientDrop(d => !d)}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-left flex items-center justify-between text-slate-500 hover:border-emerald-400">
+                        {client.name || tr("selectClient")} <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                      </button>
+                      {showClientDrop && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-10 max-h-40 overflow-y-auto">
+                          {savedClients.map(c => (
+                            <button key={c.id} type="button" onClick={() => { setClient({ name: c.name, email: c.email }); setShowClientDrop(false); }}
+                              className="w-full text-left px-3 py-2.5 text-sm hover:bg-emerald-50 border-b border-slate-50 last:border-0">
+                              <p className="font-medium text-slate-900">{c.name}</p>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <input required value={client.name} onChange={e => setClient(c => ({ ...c, name: e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("vatRate")}</label>
-                  <select value={form.vatRate} onChange={e => setForm({ ...form, vatRate: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
-                    <option value="0">{tr("vat0")}</option>
-                    <option value="6">{tr("vat6")}</option>
-                    <option value="21">{tr("vat21")}</option>
-                  </select>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("clientEmail")}</label>
+                  <input type="email" value={client.email} onChange={e => setClient(c => ({ ...c, email: e.target.value }))}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 mt-[calc(2rem+2px)]" />
                 </div>
               </div>
-              {form.amount && (
-                <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-1">
-                  <div className="flex justify-between"><span>HT</span><span>{parseFloat(form.amount || "0").toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
-                  <div className="flex justify-between"><span>TVA {form.vatRate}%</span><span>{(parseFloat(form.amount || "0") * parseFloat(form.vatRate) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
-                  <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1"><span>TTC</span><span>{(parseFloat(form.amount || "0") * (1 + parseFloat(form.vatRate) / 100)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+
+              {/* Line items */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-slate-700">Lignes de facturation</label>
+                  <button type="button" onClick={() => setShowCatalog(s => !s)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-sky-600 hover:text-sky-700 px-3 py-1.5 rounded-lg hover:bg-sky-50 transition-colors">
+                    <Package className="w-3.5 h-3.5" /> Catalogue
+                  </button>
                 </div>
-              )}
+
+                {/* Catalog dropdown */}
+                {showCatalog && services.length > 0 && (
+                  <div className="mb-3 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    {services.map(s => (
+                      <button key={s.id} type="button" onClick={() => addLineFromService(s)}
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 transition-colors border-b border-slate-50 last:border-0 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-slate-900">{s.name}</p>
+                          <p className="text-xs text-slate-400">{s.unitPrice} €/{s.unit} · TVA {s.vatRate}%</p>
+                        </div>
+                        <Plus className="w-4 h-4 text-emerald-500" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-1 text-xs font-semibold text-slate-400 uppercase px-1">
+                    <span className="col-span-5">Description</span>
+                    <span className="col-span-2 text-center">Qté</span>
+                    <span className="col-span-2 text-right">P.U. €</span>
+                    <span className="col-span-2 text-right">TVA</span>
+                    <span className="col-span-1"></span>
+                  </div>
+                  {lines.map(line => (
+                    <div key={line.id} className="grid grid-cols-12 gap-1 items-center">
+                      <input value={line.description} onChange={e => updateLine(line.id, "description", e.target.value)}
+                        placeholder="Description..." required
+                        className="col-span-5 border border-slate-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:border-emerald-400" />
+                      <input type="number" min="0.01" step="0.01" value={line.qty || ""} onChange={e => updateLine(line.id, "qty", e.target.value)}
+                        className="col-span-2 border border-slate-200 rounded-lg px-2 py-2 text-sm outline-none focus:border-emerald-400 text-center" />
+                      <input type="number" min="0" step="0.01" value={line.unitPrice || ""} onChange={e => updateLine(line.id, "unitPrice", e.target.value)}
+                        className="col-span-2 border border-slate-200 rounded-lg px-2 py-2 text-sm outline-none focus:border-emerald-400 text-right" />
+                      <select value={line.vatRate} onChange={e => updateLine(line.id, "vatRate", e.target.value)}
+                        className="col-span-2 border border-slate-200 rounded-lg px-1 py-2 text-sm outline-none focus:border-emerald-400 bg-white">
+                        <option value={0}>0%</option><option value={6}>6%</option><option value={21}>21%</option>
+                      </select>
+                      <button type="button" onClick={() => removeLine(line.id)} className="col-span-1 p-1.5 text-slate-300 hover:text-red-400 transition-colors flex items-center justify-center">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <button type="button" onClick={() => setLines(ls => [...ls, newLine(lines[lines.length - 1]?.vatRate ?? 21)])}
+                  className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition-colors">
+                  <Plus className="w-3.5 h-3.5" /> Ajouter une ligne
+                </button>
+
+                {/* Totals */}
+                <div className="mt-3 bg-slate-50 rounded-xl p-3 space-y-1 text-xs">
+                  <div className="flex justify-between text-slate-600"><span>Sous-total HT</span><span>{totalHT.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between text-slate-600"><span>TVA</span><span>{totalTVA.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1"><span>Total TTC</span><span>{totalTTC.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                </div>
+              </div>
+
+              {/* Due date + recurring */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("dueDate")} *</label>
-                  <input required type="date" value={form.due} onChange={e => setForm({ ...form, due: e.target.value })}
+                  <input required type="date" value={due} onChange={e => setDue(e.target.value)}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("recurring")}</label>
-                  <select value={form.recurring} onChange={e => setForm({ ...form, recurring: e.target.value as RecurringFreq })}
+                  <select value={recurring} onChange={e => setRecurring(e.target.value as RecurringFreq)}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
                     <option value="none">{tr("recurringNone")}</option>
                     <option value="monthly">{tr("recurringMonthly")}</option>
@@ -346,7 +390,8 @@ export default function InvoicesPage() {
                   </select>
                 </div>
               </div>
-              <div className="flex gap-3 pt-2">
+
+              <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>
                 <button type="submit" className="flex-1 gradient-btn font-semibold py-2.5 rounded-xl text-white">{tr("createInvoice")}</button>
@@ -360,18 +405,9 @@ export default function InvoicesPage() {
       {showUpgrade && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-sm p-8 shadow-2xl text-center">
-            <div className="w-14 h-14 gradient-btn rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-7 h-7 text-white" />
-            </div>
+            <div className="w-14 h-14 gradient-btn rounded-2xl flex items-center justify-center mx-auto mb-4"><Lock className="w-7 h-7 text-white" /></div>
             <h2 className="text-xl font-bold text-slate-900 mb-2">Limite atteinte</h2>
-            <p className="text-slate-500 text-sm mb-6">Le plan gratuit est limité à <strong>{FREE_INVOICE_LIMIT} factures</strong>.<br/>Passez Pro pour des factures illimitées.</p>
-            <ul className="text-left space-y-2 mb-6">
-              {["Factures illimitées", "Factures récurrentes", "Export PDF professionnel", "Support prioritaire"].map(f => (
-                <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                  <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" /> {f}
-                </li>
-              ))}
-            </ul>
+            <p className="text-slate-500 text-sm mb-6">Le plan gratuit est limité à <strong>{FREE_INVOICE_LIMIT} factures</strong>.</p>
             <UpgradeButton label="Passer Pro — 19€/mois" className="gradient-btn w-full font-semibold py-3 rounded-xl text-white mb-3" />
             <button onClick={() => setShowUpgrade(false)} className="text-sm text-slate-400 hover:text-slate-600 w-full py-2">Annuler</button>
           </div>
