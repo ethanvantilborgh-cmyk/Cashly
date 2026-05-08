@@ -8,10 +8,14 @@ export type InvoiceData = {
   status: string;
   date: string;
   due: string;
+  vatRate?: number;
 };
 
-export function printInvoice(invoice: InvoiceData) {
+export function printInvoice(invoice: InvoiceData, paymentUrl?: string) {
   const company = getCompanySettings();
+  const vatRate = invoice.vatRate ?? 0;
+  const vatAmount = invoice.amount * vatRate / 100;
+  const amountTTC = invoice.amount + vatAmount;
 
   const companyBlock = company.name
     ? `<div class="company">
@@ -31,14 +35,21 @@ export function printInvoice(invoice: InvoiceData) {
       </div>`
     : "";
 
+  const payButtonBlock = paymentUrl
+    ? `<div style="text-align:center;margin:24px 0;">
+        <a href="${paymentUrl}" style="display:inline-block;background:linear-gradient(135deg,#10b981,#0ea5e9);color:white;padding:14px 32px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;">
+          💳 Payer maintenant — ${amountTTC.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €
+        </a>
+      </div>`
+    : "";
+
   const notesBlock = company.invoiceNotes
     ? `<div class="notes">${company.invoiceNotes}</div>`
     : "";
 
-  const dueDays = company.paymentDays || "30";
-
   const statusLabel = invoice.status === "paid" ? "Payée" : invoice.status === "pending" ? "En attente" : "En retard";
   const statusColor = invoice.status === "paid" ? "#10b981" : invoice.status === "pending" ? "#f59e0b" : "#ef4444";
+  const dueDays = company.paymentDays || "30";
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -63,7 +74,7 @@ export function printInvoice(invoice: InvoiceData) {
     th { text-align: left; padding: 12px 16px; background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
     td { padding: 16px; border-bottom: 1px solid #f1f5f9; }
     .service-name { font-weight: 600; color: #1e293b; }
-    .totals { display: flex; justify-content: flex-end; margin-bottom: 32px; }
+    .totals { display: flex; justify-content: flex-end; margin-bottom: 24px; }
     .totals-table { width: 300px; }
     .totals-row { display: flex; justify-content: space-between; padding: 8px 0; color: #64748b; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
     .totals-final { display: flex; justify-content: space-between; padding: 12px 16px; background: #f8fafc; border-radius: 12px; margin-top: 8px; font-weight: 700; font-size: 16px; color: #1e293b; }
@@ -83,9 +94,7 @@ export function printInvoice(invoice: InvoiceData) {
       <div class="status-badge">${statusLabel}</div>
     </div>
   </div>
-
   <div class="divider"></div>
-
   <div class="parties">
     <div>
       <div class="from-label">De</div>
@@ -99,35 +108,36 @@ export function printInvoice(invoice: InvoiceData) {
       </div>
     </div>
   </div>
-
   <table>
     <thead>
       <tr>
-        <th style="width:60%">Description</th>
-        <th style="width:15%;text-align:right">Qté</th>
-        <th style="width:25%;text-align:right">Montant HT</th>
+        <th style="width:55%">Description</th>
+        <th style="width:10%;text-align:right">Qté</th>
+        <th style="width:17%;text-align:right">Prix HT</th>
+        <th style="width:8%;text-align:right">TVA</th>
+        <th style="width:17%;text-align:right">Total TTC</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td><div class="service-name">Prestation de services</div><div style="color:#64748b;font-size:13px;margin-top:2px">Réf. ${invoice.id}</div></td>
         <td style="text-align:right;color:#475569">1</td>
-        <td style="text-align:right;font-weight:600">${invoice.amount.toLocaleString("fr-FR")} €</td>
+        <td style="text-align:right">${invoice.amount.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
+        <td style="text-align:right;color:#64748b">${vatRate}%</td>
+        <td style="text-align:right;font-weight:600">${amountTTC.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
       </tr>
     </tbody>
   </table>
-
   <div class="totals">
     <div class="totals-table">
-      <div class="totals-row"><span>Sous-total HT</span><span>${invoice.amount.toLocaleString("fr-FR")} €</span></div>
-      <div class="totals-row"><span>TVA (0%)</span><span>0,00 €</span></div>
-      <div class="totals-final"><span>Total TTC</span><span>${invoice.amount.toLocaleString("fr-FR")} €</span></div>
+      <div class="totals-row"><span>Sous-total HT</span><span>${invoice.amount.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+      <div class="totals-row"><span>TVA (${vatRate}%)</span><span>${vatAmount.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+      <div class="totals-final"><span>Total TTC</span><span>${amountTTC.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
     </div>
   </div>
-
+  ${payButtonBlock}
   ${ibanBlock}
   ${notesBlock}
-
   <div class="footer">Généré par Cashly · cashly.app · Délai de paiement : ${dueDays} jours</div>
 </body>
 </html>`;

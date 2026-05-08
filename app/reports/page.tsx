@@ -2,6 +2,7 @@
 import Sidebar from "../components/Sidebar";
 import { BarChart2, TrendingUp, Download, FileText } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { useLang } from "../context/LangContext";
 
 const MONTHLY = [
   { month: "Nov", revenus: 8200,  depenses: 2100 },
@@ -30,10 +31,25 @@ const INVOICE_STATUS = [
 ];
 
 export default function ReportsPage() {
+  const { tr } = useLang();
   const totalRev = MONTHLY.reduce((s, m) => s + m.revenus, 0);
   const totalDep = MONTHLY.reduce((s, m) => s + m.depenses, 0);
   const totalBen = totalRev - totalDep;
   const margin = Math.round((totalBen / totalRev) * 100);
+
+  function exportCSV() {
+    const rows = [
+      ["Mois", "Revenus (€)", "Dépenses (€)", "Bénéfice (€)"],
+      ...MONTHLY.map(m => [m.month, m.revenus.toString(), m.depenses.toString(), (m.revenus - m.depenses).toString()]),
+      ["TOTAL", totalRev.toString(), totalDep.toString(), totalBen.toString()],
+    ];
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `cashly-rapport-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -46,8 +62,8 @@ export default function ReportsPage() {
             </h1>
             <p className="text-slate-500 text-sm mt-1">6 derniers mois · Nov 2024 — Avr 2025</p>
           </div>
-          <button className="flex items-center gap-2 border border-slate-200 text-sm font-semibold px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-            <Download className="w-4 h-4" /> Exporter CSV
+          <button onClick={exportCSV} className="flex items-center gap-2 border border-slate-200 text-sm font-semibold px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+            <Download className="w-4 h-4" /> {tr("exportCsv")}
           </button>
         </div>
 

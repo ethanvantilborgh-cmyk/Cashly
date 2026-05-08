@@ -1,7 +1,7 @@
 "use client";
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
-import { Plus, Search, FileText, Download, Send, X, Check, Lock, Crown, ChevronDown } from "lucide-react";
+import { Plus, Search, FileText, Download, X, Check, Lock, Crown, ChevronDown, CheckCircle2, Link2, Mail, FileDown } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { printInvoice } from "../lib/printInvoice";
 import { isPro, FREE_INVOICE_LIMIT } from "../lib/pro";
@@ -33,8 +33,64 @@ export default function InvoicesPage() {
   const [pro, setPro] = useState(false);
   const [savedClients, setSavedClients] = useState<Client[]>([]);
   const [showClientDrop, setShowClientDrop] = useState(false);
+  const [toast, setToast] = useState("");
+  const [payLoading, setPayLoading] = useState<string | null>(null);
 
   useEffect(() => { setPro(isPro()); setSavedClients(getSavedClients()); }, []);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(""), 3000);
+  }
+
+  function markAsPaid(id: string) {
+    setInvoices(inv => inv.map(i => i.id === id ? { ...i, status: "paid" as const } : i));
+    showToast("✓ Facture marquée comme payée !");
+  }
+
+  function sendReminder(inv: Invoice) {
+    const ttc = (inv.amount * (1 + (inv.vatRate ?? 0) / 100)).toLocaleString("fr-FR", { minimumFractionDigits: 2 });
+    const subject = encodeURIComponent(`Rappel : Facture ${inv.id} — ${ttc} €`);
+    const body = encodeURIComponent(
+      `Bonjour,\n\nNous vous rappelons que la facture ${inv.id} d'un montant de ${ttc} € est arrivée à échéance le ${inv.due}.\n\nMerci de bien vouloir procéder au règlement dans les meilleurs délais.\n\nCordialement`
+    );
+    window.open(`mailto:${inv.email}?subject=${subject}&body=${body}`);
+  }
+
+  async function copyPaymentLink(inv: Invoice) {
+    setPayLoading(inv.id);
+    try {
+      const res = await fetch("/api/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: inv.amount, invoiceId: inv.id, clientName: inv.client, vatRate: inv.vatRate ?? 0 }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        await navigator.clipboard.writeText(data.url);
+        showToast("💳 Lien de paiement copié !");
+      } else {
+        showToast("Erreur : " + (data.error || "Inconnu"));
+      }
+    } catch { showToast("Erreur de connexion"); }
+    setPayLoading(null);
+  }
+
+  function exportCSV() {
+    const rows = [
+      ["Référence","Client","Email","Montant HT","TVA %","Total TTC","Statut","Date","Échéance"],
+      ...invoices.map(i => {
+        const ttc = i.amount * (1 + (i.vatRate ?? 0) / 100);
+        return [i.id, i.client, i.email, i.amount.toFixed(2), (i.vatRate ?? 0) + "%", ttc.toFixed(2), i.status, i.date, i.due];
+      }),
+    ];
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `cashly-factures-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
 
   const STATUS_MAP = {
     paid:    { label: tr("paid"),    className: "status-paid" },
@@ -94,14 +150,19 @@ export default function InvoicesPage() {
             </h1>
             <p className="text-slate-500 text-sm mt-1">{tr("invoicesSub")}</p>
           </div>
-          <button onClick={handleNewInvoice} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
-            <Plus className="w-4 h-4" /> {tr("newInvoice")}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={exportCSV} className="flex items-center gap-2 border border-slate-200 text-sm font-semibold px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+              <FileDown className="w-4 h-4" /> Export CSV
+            </button>
+            <button onClick={handleNewInvoice} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
+              <Plus className="w-4 h-4" /> {tr("newInvoice")}
+            </button>
+          </div>
         </div>
 
-        {saved && (
+        {(saved || toast) && (
           <div className="fixed top-6 right-6 z-50 bg-emerald-500 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium">
-            <Check className="w-4 h-4" /> {tr("invoiceCreated")}
+            <Check className="w-4 h-4" /> {toast || tr("invoiceCreated")}
           </div>
         )}
 
@@ -174,8 +235,22 @@ export default function InvoicesPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      <button className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors" title={tr("actions")}>
-                        <Send className="w-3.5 h-3.5" />
+                      {inv.status !== "paid" && (
+                        <button onClick={() => markAsPaid(inv.id)} title="Marquer payée"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {inv.email && inv.status !== "paid" && (
+                        <button onClick={() => sendReminder(inv)} title="Envoyer rappel par email"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors">
+                          <Mail className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button onClick={() => copyPaymentLink(inv)} title="Copier lien de paiement Stripe"
+                        disabled={payLoading === inv.id}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors disabled:opacity-50">
+                        <Link2 className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => printInvoice(inv)} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors" title="Télécharger PDF">
                         <Download className="w-3.5 h-3.5" />
