@@ -13,6 +13,7 @@ const EMPTY: Omit<Service, "id"> = { name: "", description: "", unitPrice: 0, va
 
 export default function ServicesPage() {
   const { lang, tr } = useLang();
+  const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
   const [services, setServices] = useState<Service[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -73,8 +74,8 @@ export default function ServicesPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("servicesTotal")}</p><p className="text-xl font-bold text-slate-900">{services.length}</p></div>
-          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("servicesAvgPrice")}</p><p className="text-xl font-bold text-emerald-600">{services.length ? Math.round(services.reduce((s, x) => s + x.unitPrice, 0) / services.length).toLocaleString("fr-FR") + " €" : "—"}</p></div>
-          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("servicesHighestPrice")}</p><p className="text-xl font-bold text-sky-600">{services.length ? Math.max(...services.map(s => s.unitPrice)).toLocaleString("fr-FR") + " €" : "—"}</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("servicesAvgPrice")}</p><p className="text-xl font-bold text-emerald-600">{services.length ? Math.round(services.reduce((s, x) => s + x.unitPrice, 0) / services.length).toLocaleString(locale) + " €" : "—"}</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("servicesHighestPrice")}</p><p className="text-xl font-bold text-sky-600">{services.length ? Math.max(...services.map(s => s.unitPrice)).toLocaleString(locale) + " €" : "—"}</p></div>
         </div>
 
         {/* Cards */}
@@ -103,7 +104,7 @@ export default function ServicesPage() {
                 {s.description && <p className="text-xs text-slate-400 mb-3">{s.description}</p>}
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-50">
                   <div>
-                    <p className="text-lg font-bold text-slate-900">{s.unitPrice.toLocaleString("fr-FR")} €</p>
+                    <p className="text-lg font-bold text-slate-900">{s.unitPrice.toLocaleString(locale)} €</p>
                     <p className="text-xs text-slate-400">{tr("unitPer")} {s.unit}</p>
                   </div>
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${VAT_COLORS[s.vatRate] || "bg-slate-100 text-slate-600"}`}>
@@ -127,12 +128,12 @@ export default function ServicesPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("serviceName")} *</label>
-                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={lang === "en" ? "Web development" : lang === "nl" ? "Webontwikkeling" : "Développement web"}
+                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={tr("exampleServiceName")}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("description")}</label>
-                <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder={lang === "en" ? "Front/back development" : lang === "nl" ? "Front/back ontwikkeling" : "Développement front/back"}
+                <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder={tr("exampleServiceDescription")}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
               </div>
               <div className="grid grid-cols-2 gap-3">

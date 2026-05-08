@@ -83,7 +83,8 @@ function printQuote(q: Quote) {
 const EMPTY_FORM = { client: "", email: "", amount: "", due: "", vatRate: "21", description: "" };
 
 export default function QuotesPage() {
-  const { tr } = useLang();
+  const { lang, tr } = useLang();
+  const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -203,8 +204,8 @@ export default function QuotesPage() {
           {[
             { label: tr("quotesTitle"), value: quotes.length, color: "text-slate-900" },
             { label: tr("quoteSent"),   value: quotes.filter(q => q.status === "sent").length, color: "text-sky-600" },
-            { label: tr("quoteSentValue"),    value: totalAccepted.toLocaleString("fr-FR") + " €", color: "text-emerald-600" },
-            { label: tr("quoteAwaitingValue"), value: totalPending.toLocaleString("fr-FR") + " €",  color: "text-amber-600" },
+            { label: tr("quoteSentValue"),    value: totalAccepted.toLocaleString(locale) + " €", color: "text-emerald-600" },
+            { label: tr("quoteAwaitingValue"), value: totalPending.toLocaleString(locale) + " €",  color: "text-amber-600" },
           ].map(({ label, value, color }) => (
             <div key={label} className="card p-4">
               <p className="text-xs text-slate-400 mb-1">{label}</p>
@@ -242,7 +243,7 @@ export default function QuotesPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-700">{q.amount.toLocaleString()} €</td>
                     <td className="px-4 py-3 text-slate-500">{q.vatRate}%</td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">{ttc.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
+                    <td className="px-4 py-3 font-semibold text-slate-900">{ttc.toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
                     <td className="px-4 py-3 text-slate-500">{q.due}</td>
                     <td className="px-4 py-3">
                       <select value={q.status} onChange={e => updateStatus(q.id, e.target.value as QuoteStatus)}
@@ -261,9 +262,9 @@ export default function QuotesPage() {
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <button onClick={() => openEdit(q)} title="Modifier" className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => printQuote(q)} title="PDF" className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => deleteQuote(q.id)} title="Supprimer" className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => openEdit(q)} title={tr("editLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => printQuote(q)} title={tr("pdf")} className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => deleteQuote(q.id)} title={tr("deleteLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                         {q.status === "accepted" && (
                           <span className="text-xs text-emerald-600 font-medium flex items-center gap-1 ml-1">
                             <Check className="w-3 h-3" /> {tr("quoteConverted2")}
@@ -351,9 +352,9 @@ export default function QuotesPage() {
               </div>
               {form.amount && (
                 <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-1">
-                  <div className="flex justify-between"><span>HT</span><span>{parseFloat(form.amount || "0").toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
-                  <div className="flex justify-between"><span>TVA {form.vatRate}%</span><span>{(parseFloat(form.amount || "0") * parseFloat(form.vatRate) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
-                  <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1"><span>TTC</span><span>{(parseFloat(form.amount || "0") * (1 + parseFloat(form.vatRate) / 100)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between"><span>{tr("amountHT")}</span><span>{parseFloat(form.amount || "0").toLocaleString(locale, { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between"><span>{tr("vatAmount")} {form.vatRate}%</span><span>{(parseFloat(form.amount || "0") * parseFloat(form.vatRate) / 100).toLocaleString(locale, { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1"><span>{tr("amountTTC")}</span><span>{(parseFloat(form.amount || "0") * (1 + parseFloat(form.vatRate) / 100)).toLocaleString(locale, { minimumFractionDigits: 2 })} €</span></div>
                 </div>
               )}
               <div>

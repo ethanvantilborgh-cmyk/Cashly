@@ -8,6 +8,7 @@ import { getInvoices, getExpenses, getVatReport, VatQuarter } from "../lib/stora
 
 export default function ReportsPage() {
   const { lang, tr } = useLang();
+  const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
 
   const [monthly, setMonthly]   = useState<{ month: string; revenus: number; depenses: number }[]>([]);
   const [expByCat, setExpByCat] = useState<{ name: string; value: number; color: string }[]>([]);
@@ -17,7 +18,6 @@ export default function ReportsPage() {
   useEffect(() => {
     const invoices = getInvoices();
     const expenses = getExpenses();
-    const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
 
     // ── Monthly revenue vs expenses (last 6 months) ─────────────────────────
     const now = new Date();
@@ -71,7 +71,7 @@ export default function ReportsPage() {
 
   function exportCSV() {
     const rows = [
-      ["Mois", "Revenus (€)", "Dépenses (€)", "Bénéfice (€)"],
+      [tr("monthLabel"), tr("revenue") + " (€)", tr("expensesLabel") + " (€)", tr("netProfit") + " (€)"],
       ...monthly.map(m => [m.month, m.revenus.toString(), m.depenses.toString(), (m.revenus - m.depenses).toString()]),
       ["TOTAL", totalRev.toString(), totalDep.toString(), totalBen.toString()],
     ];
@@ -102,9 +102,9 @@ export default function ReportsPage() {
         {/* KPIs */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
-            { label: tr("totalRevenue"),  value: `${totalRev.toLocaleString("fr-FR")} €`, color: "text-emerald-600", icon: TrendingUp },
-            { label: tr("totalExpenses"), value: `${totalDep.toLocaleString("fr-FR")} €`, color: "text-red-500",     icon: Receipt },
-            { label: tr("netProfit"),     value: `${totalBen.toLocaleString("fr-FR")} €`, color: "text-sky-600",     icon: TrendingUp },
+            { label: tr("totalRevenue"),  value: `${totalRev.toLocaleString(locale)} €`, color: "text-emerald-600", icon: TrendingUp },
+            { label: tr("totalExpenses"), value: `${totalDep.toLocaleString(locale)} €`, color: "text-red-500",     icon: Receipt },
+            { label: tr("netProfit"),     value: `${totalBen.toLocaleString(locale)} €`, color: "text-sky-600",     icon: TrendingUp },
             { label: tr("netMargin"),     value: `${margin} %`,                           color: "text-violet-600",  icon: BarChart2 },
           ].map(({ label, value, color, icon: Icon }) => (
             <div key={label} className="card p-5">
@@ -126,9 +126,9 @@ export default function ReportsPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}k€`} />
-              <Tooltip formatter={(v) => `${Number(v).toLocaleString("fr-FR")} €`} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
-              <Bar dataKey="revenus"  name="Revenus"  fill="#10b981" radius={[6,6,0,0]} />
-              <Bar dataKey="depenses" name="Dépenses" fill="#f87171" radius={[6,6,0,0]} />
+              <Tooltip formatter={(v) => `${Number(v).toLocaleString(locale)} €`} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
+              <Bar dataKey="revenus"  name={tr("revenue")}       fill="#10b981" radius={[6,6,0,0]} />
+              <Bar dataKey="depenses" name={tr("expensesLabel")} fill="#f87171" radius={[6,6,0,0]} />
               <Legend formatter={v => <span style={{ fontSize: 12, color: "#64748b" }}>{v}</span>} />
             </BarChart>
           </ResponsiveContainer>
@@ -144,7 +144,7 @@ export default function ReportsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}k€`} />
-                <Tooltip formatter={(v) => `${Number(v).toLocaleString("fr-FR")} €`} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
+                <Tooltip formatter={(v) => `${Number(v).toLocaleString(locale)} €`} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
                 <Line type="monotone" dataKey="benefice" name={tr("netProfit")} stroke="#0ea5e9" strokeWidth={2.5} dot={{ fill: "#0ea5e9", r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -183,7 +183,7 @@ export default function ReportsPage() {
                 <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: `${color}20`, border: `3px solid ${color}` }}>
                   <span className="text-lg font-bold" style={{ color }}>{grandTotal > 0 ? Math.round(value / grandTotal * 100) : 0}%</span>
                 </div>
-                <p className="text-sm font-semibold text-slate-900">{value.toLocaleString("fr-FR")} €</p>
+                <p className="text-sm font-semibold text-slate-900">{value.toLocaleString(locale)} €</p>
                 <p className="text-xs text-slate-400">{name}</p>
               </div>
             ))}
@@ -212,12 +212,12 @@ export default function ReportsPage() {
                   {vatReport.map(q => (
                     <tr key={q.label} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-3 px-3 font-semibold text-slate-900">{q.label}</td>
-                      <td className="py-3 px-3 text-right text-slate-700">{q.revenueHT.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
-                      <td className="py-3 px-3 text-right text-emerald-600 font-medium">{q.vatCollected.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
-                      <td className="py-3 px-3 text-right text-sky-600 font-medium">-{q.vatDeductible.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
+                      <td className="py-3 px-3 text-right text-slate-700">{q.revenueHT.toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
+                      <td className="py-3 px-3 text-right text-emerald-600 font-medium">{q.vatCollected.toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
+                      <td className="py-3 px-3 text-right text-sky-600 font-medium">-{q.vatDeductible.toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
                       <td className="py-3 px-3 text-right">
                         <span className={`font-bold px-2.5 py-1 rounded-lg text-sm ${q.vatDue > 0 ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-600"}`}>
-                          {q.vatDue.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €
+                          {q.vatDue.toLocaleString(locale, { minimumFractionDigits: 2 })} €
                         </span>
                       </td>
                     </tr>
@@ -226,10 +226,10 @@ export default function ReportsPage() {
                 <tfoot>
                   <tr className="border-t-2 border-slate-200 bg-slate-50">
                     <td className="py-3 px-3 font-bold text-slate-900">{tr("totalRow")}</td>
-                    <td className="py-3 px-3 text-right font-bold text-slate-700">{vatReport.reduce((s, q) => s + q.revenueHT, 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
-                    <td className="py-3 px-3 text-right font-bold text-emerald-600">{vatReport.reduce((s, q) => s + q.vatCollected, 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
-                    <td className="py-3 px-3 text-right font-bold text-sky-600">-{vatReport.reduce((s, q) => s + q.vatDeductible, 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
-                    <td className="py-3 px-3 text-right font-bold text-violet-700">{vatReport.reduce((s, q) => s + q.vatDue, 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
+                    <td className="py-3 px-3 text-right font-bold text-slate-700">{vatReport.reduce((s, q) => s + q.revenueHT, 0).toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
+                    <td className="py-3 px-3 text-right font-bold text-emerald-600">{vatReport.reduce((s, q) => s + q.vatCollected, 0).toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
+                    <td className="py-3 px-3 text-right font-bold text-sky-600">-{vatReport.reduce((s, q) => s + q.vatDeductible, 0).toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
+                    <td className="py-3 px-3 text-right font-bold text-violet-700">{vatReport.reduce((s, q) => s + q.vatDue, 0).toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
                   </tr>
                 </tfoot>
               </table>

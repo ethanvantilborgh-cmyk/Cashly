@@ -17,7 +17,8 @@ import {
 type StatusFilter = "all" | "paid" | "pending" | "overdue";
 
 export default function InvoicesPage() {
-  const { tr } = useLang();
+  const { lang, tr } = useLang();
+  const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
 
   const RECURRING_LABELS: Record<RecurringFreq, string> = {
     none: "", monthly: "🔁 " + tr("recurringMonthly"), quarterly: "🔁 " + tr("recurringQuarterly"), yearly: "🔁 " + tr("recurringYearly"),
@@ -86,7 +87,7 @@ export default function InvoicesPage() {
   }
 
   function sendReminder(inv: Invoice) {
-    const ttc = invoiceTotalTTC(inv.lines).toLocaleString("fr-FR", { minimumFractionDigits: 2 });
+    const ttc = invoiceTotalTTC(inv.lines).toLocaleString(locale, { minimumFractionDigits: 2 });
     const subject = encodeURIComponent(`Rappel : Facture ${inv.id} — ${ttc} €`);
     const body = encodeURIComponent(`Bonjour,\n\nNous vous rappelons que la facture ${inv.id} d'un montant de ${ttc} € est arrivée à échéance le ${inv.due}.\n\nMerci de bien vouloir procéder au règlement.\n\nCordialement`);
     window.open(`mailto:${inv.email}?subject=${subject}&body=${body}`);
@@ -100,21 +101,21 @@ export default function InvoicesPage() {
         body: JSON.stringify({ amount: ttc, invoiceId: inv.id, clientName: inv.client, vatRate: 0 }),
       });
       const data = await res.json();
-      if (data.url) { await navigator.clipboard.writeText(data.url); showToast("💳 Lien de paiement copié !"); }
-      else showToast("Erreur : " + (data.error || "Inconnu"));
-    } catch { showToast("Erreur de connexion"); }
+      if (data.url) { await navigator.clipboard.writeText(data.url); showToast(tr("paymentLinkCopied")); }
+      else showToast("⚠️ " + (data.error || "Error"));
+    } catch { showToast(tr("connectionError")); }
     setPayLoading(null);
   }
 
   function doGenerateNext(inv: Invoice) {
     const next = generateNextInvoice(inv, invoices);
     persist([next, ...invoices]);
-    showToast(`✓ ${next.id} créée pour le ${next.due}`);
+    showToast("✓ " + next.id + " " + tr("invoiceGeneratedFor") + " " + next.due);
   }
 
   function exportCSV() {
     const rows = [
-      ["Référence","Client","Email","Montant HT","TVA","Total TTC","Statut","Date","Échéance","Récurrence"],
+      [tr("reference"), tr("client"), "Email", tr("amountHT"), tr("vatAmount"), tr("totalTTC"), tr("status"), tr("date"), tr("dueDate"), tr("recurring")],
       ...invoices.map(i => {
         const ttc = invoiceTotalTTC(i.lines);
         const tva = invoiceTotalTVA(i.lines);
@@ -230,20 +231,20 @@ export default function InvoicesPage() {
           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-amber-800">Plan Gratuit — {invoices.length}/{FREE_INVOICE_LIMIT} factures</p>
-                {invoices.length >= FREE_INVOICE_LIMIT && <span className="text-xs text-red-500 font-semibold">Limite atteinte</span>}
+                <p className="text-sm font-semibold text-amber-800">{tr("freePlan")} — {invoices.length}/{FREE_INVOICE_LIMIT} {tr("invoices").toLowerCase()}</p>
+                {invoices.length >= FREE_INVOICE_LIMIT && <span className="text-xs text-red-500 font-semibold">{tr("limitReached")}</span>}
               </div>
               <div className="h-2 bg-amber-100 rounded-full">
                 <div className="h-2 bg-amber-400 rounded-full transition-all" style={{ width: `${Math.min((invoices.length / FREE_INVOICE_LIMIT) * 100, 100)}%` }} />
               </div>
             </div>
-            <UpgradeButton label="Passer Pro →" className="gradient-btn text-xs font-semibold px-4 py-2 rounded-lg text-white flex-shrink-0" />
+            <UpgradeButton label={tr("upgradePro") + " →"} className="gradient-btn text-xs font-semibold px-4 py-2 rounded-lg text-white flex-shrink-0" />
           </div>
         )}
         {pro && (
           <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-center gap-2">
             <Crown className="w-4 h-4 text-emerald-600" />
-            <p className="text-sm font-semibold text-emerald-700">Cashly Pro · Factures illimitées ✓</p>
+            <p className="text-sm font-semibold text-emerald-700">{tr("proPlan")} · {tr("unlimitedInvoices")}</p>
           </div>
         )}
 
@@ -299,9 +300,9 @@ export default function InvoicesPage() {
                     <p className="font-medium text-slate-900">{inv.client}</p>
                     <p className="text-xs text-slate-400">{inv.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{inv.lines.length} ligne{inv.lines.length > 1 ? "s" : ""}</td>
-                  <td className="px-4 py-3 text-slate-700">{invoiceTotalHT(inv.lines).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">{invoiceTotalTTC(inv.lines).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{inv.lines.length} {tr("lines").toLowerCase()}</td>
+                  <td className="px-4 py-3 text-slate-700">{invoiceTotalHT(inv.lines).toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
+                  <td className="px-4 py-3 font-semibold text-slate-900">{invoiceTotalTTC(inv.lines).toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
                   <td className="px-4 py-3">
                     <p className="text-slate-500">{inv.due}</p>
                     {inv.recurring !== "none" && nextRecurringDate(inv) && (
@@ -314,20 +315,20 @@ export default function InvoicesPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       {inv.status !== "paid" && (
-                        <button onClick={() => markAsPaid(inv.id)} title="Marquer payée" className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><CheckCircle2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => markAsPaid(inv.id)} title={tr("markAsPaid")} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><CheckCircle2 className="w-3.5 h-3.5" /></button>
                       )}
-                      <button onClick={() => openEdit(inv)} title="Modifier" className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => duplicateInvoice(inv)} title="Dupliquer" className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"><Copy className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => openEdit(inv)} title={tr("editLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => duplicateInvoice(inv)} title={tr("duplicate")} className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"><Copy className="w-3.5 h-3.5" /></button>
                       {inv.email && inv.status !== "paid" && (
-                        <button onClick={() => sendReminder(inv)} title="Envoyer rappel" className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Mail className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => sendReminder(inv)} title={tr("sendReminder")} className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Mail className="w-3.5 h-3.5" /></button>
                       )}
-                      <button onClick={() => copyPaymentLink(inv)} title="Copier lien paiement" disabled={payLoading === inv.id}
+                      <button onClick={() => copyPaymentLink(inv)} title={tr("copyPaymentLink")} disabled={payLoading === inv.id}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors disabled:opacity-50"><Link2 className="w-3.5 h-3.5" /></button>
                       {inv.recurring !== "none" && (
                         <button onClick={() => doGenerateNext(inv)} title={tr("generateNext")} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><RefreshCw className="w-3.5 h-3.5" /></button>
                       )}
-                      <button onClick={() => printInvoice(inv)} title="PDF" className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => deleteInvoice(inv.id)} title="Supprimer" className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => printInvoice(inv)} title={tr("pdf")} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => deleteInvoice(inv.id)} title={tr("deleteLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>
                 </tr>
@@ -343,9 +344,9 @@ export default function InvoicesPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4">
           <div className="card w-full max-w-sm p-6 text-center shadow-2xl">
             <Lock className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Limite atteinte</h2>
-            <p className="text-sm text-slate-500 mb-5">Passez à Cashly Pro pour créer des factures illimitées.</p>
-            <UpgradeButton label="Passer Pro — 19 €/mois" className="gradient-btn w-full font-semibold py-3 rounded-xl text-white flex items-center justify-center gap-2" />
+            <h2 className="text-lg font-bold text-slate-900 mb-2">{tr("limitReached")}</h2>
+            <p className="text-sm text-slate-500 mb-5">{tr("upgradeDesc")}</p>
+            <UpgradeButton label={tr("upgradeProFull")} className="gradient-btn w-full font-semibold py-3 rounded-xl text-white flex items-center justify-center gap-2" />
             <button onClick={() => setShowUpgrade(false)} className="mt-3 text-sm text-slate-400 hover:text-slate-600">{tr("cancel")}</button>
           </div>
         </div>
@@ -451,9 +452,9 @@ export default function InvoicesPage() {
                 </button>
 
                 <div className="mt-3 bg-slate-50 rounded-xl p-3 space-y-1 text-xs">
-                  <div className="flex justify-between text-slate-600"><span>{tr("subtotalHT")}</span><span>{totalHT.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
-                  <div className="flex justify-between text-slate-600"><span>{tr("vatAmount")}</span><span>{totalTVA.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
-                  <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1"><span>{tr("totalTTC")}</span><span>{totalTTC.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between text-slate-600"><span>{tr("subtotalHT")}</span><span>{totalHT.toLocaleString(locale, { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between text-slate-600"><span>{tr("vatAmount")}</span><span>{totalTVA.toLocaleString(locale, { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1"><span>{tr("totalTTC")}</span><span>{totalTTC.toLocaleString(locale, { minimumFractionDigits: 2 })} €</span></div>
                 </div>
               </div>
 

@@ -44,7 +44,8 @@ function DashboardContent() {
     overdue: { label: tr("overdue"), className: "status-overdue" },
   };
 
-  const fmt = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 0 }) + " €";
+  const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
+  const fmt = (n: number) => n.toLocaleString(locale, { maximumFractionDigits: 0 }) + " €";
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -114,9 +115,9 @@ function DashboardContent() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickFormatter={v => v > 0 ? `${(v/1000).toFixed(0)}k€` : "0"} width={36} />
-              <Tooltip formatter={(v) => `${Number(v).toLocaleString("fr-FR")} €`} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
-              <Area type="monotone" dataKey="revenus"  name="Revenus"  stroke="#10b981" strokeWidth={2} fill="url(#gRev)" dot={{ fill: "#10b981", r: 3 }} />
-              <Area type="monotone" dataKey="depenses" name="Dépenses" stroke="#f87171" strokeWidth={2} fill="url(#gDep)" dot={{ fill: "#f87171", r: 3 }} />
+              <Tooltip formatter={(v) => `${Number(v).toLocaleString(locale)} €`} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
+              <Area type="monotone" dataKey="revenus"  name={tr("revenue")}       stroke="#10b981" strokeWidth={2} fill="url(#gRev)" dot={{ fill: "#10b981", r: 3 }} />
+              <Area type="monotone" dataKey="depenses" name={tr("expensesLabel")} stroke="#f87171" strokeWidth={2} fill="url(#gDep)" dot={{ fill: "#f87171", r: 3 }} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

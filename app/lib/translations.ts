@@ -256,6 +256,30 @@ export const t = {
     // Sidebar Pro
     proPlan: "Cashly Pro",
     unlimitedInvoices: "Factures illimitées ✓",
+
+    // Actions / Tooltips
+    markAsPaid: "Marquer payée",
+    duplicate: "Dupliquer",
+    sendReminder: "Envoyer rappel",
+    copyPaymentLink: "Copier lien paiement",
+    deleteLabel: "Supprimer",
+    editLabel: "Modifier",
+    pdf: "PDF",
+
+    // Toasts / Errors
+    paymentLinkCopied: "💳 Lien de paiement copié !",
+    connectionError: "Erreur de connexion",
+    invoiceGeneratedFor: "créée pour le",
+    limitReached: "Limite atteinte",
+    upgradeDesc: "Passez à Cashly Pro pour créer des factures illimitées.",
+    upgradeProFull: "Passer Pro — 19 €/mois",
+
+    // Service placeholders
+    exampleServiceName: "Développement web",
+    exampleServiceDescription: "Développement front/back",
+
+    // CSV / data
+    monthLabel: "Mois",
   },
 
   en: {
@@ -490,6 +514,26 @@ export const t = {
 
     proPlan: "Cashly Pro",
     unlimitedInvoices: "Unlimited invoices ✓",
+
+    markAsPaid: "Mark as paid",
+    duplicate: "Duplicate",
+    sendReminder: "Send reminder",
+    copyPaymentLink: "Copy payment link",
+    deleteLabel: "Delete",
+    editLabel: "Edit",
+    pdf: "PDF",
+
+    paymentLinkCopied: "💳 Payment link copied!",
+    connectionError: "Connection error",
+    invoiceGeneratedFor: "created for",
+    limitReached: "Limit reached",
+    upgradeDesc: "Upgrade to Cashly Pro to create unlimited invoices.",
+    upgradeProFull: "Upgrade Pro — €19/month",
+
+    exampleServiceName: "Web development",
+    exampleServiceDescription: "Front/back development",
+
+    monthLabel: "Month",
   },
 
   nl: {
@@ -724,6 +768,26 @@ export const t = {
 
     proPlan: "Cashly Pro",
     unlimitedInvoices: "Onbeperkte facturen ✓",
+
+    markAsPaid: "Markeer als betaald",
+    duplicate: "Dupliceren",
+    sendReminder: "Herinnering sturen",
+    copyPaymentLink: "Betalingslink kopiëren",
+    deleteLabel: "Verwijderen",
+    editLabel: "Bewerken",
+    pdf: "PDF",
+
+    paymentLinkCopied: "💳 Betalingslink gekopieerd!",
+    connectionError: "Verbindingsfout",
+    invoiceGeneratedFor: "aangemaakt voor",
+    limitReached: "Limiet bereikt",
+    upgradeDesc: "Upgrade naar Cashly Pro voor onbeperkte facturen.",
+    upgradeProFull: "Pro worden — €19/maand",
+
+    exampleServiceName: "Webontwikkeling",
+    exampleServiceDescription: "Front/back ontwikkeling",
+
+    monthLabel: "Maand",
   },
 };
 
