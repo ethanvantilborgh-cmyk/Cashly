@@ -188,11 +188,11 @@ export default function ClientsPage() {
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {inp("name", tr("clientName") + " *", "text", "Jean Dupont")}
-              {inp("company", tr("clientCompany"), "text", "Acme SRL")}
-              {inp("email", tr("clientEmail"), "email", "jean@acme.be")}
+              {inp("name", tr("clientName") + " *", "text", tr("placeholderClientName"))}
+              {inp("company", tr("clientCompany"), "text", tr("placeholderClientCompany"))}
+              {inp("email", tr("clientEmail"), "email", tr("placeholderClientEmail"))}
               {inp("phone", tr("clientPhone"), "tel", "+32 2 123 45 67")}
-              {inp("address", tr("clientAddress"), "text", "Rue de la Paix 10, 1000 Bruxelles")}
+              {inp("address", tr("clientAddress"), "text", tr("placeholderClientAddress"))}
               {inp("vat", tr("clientVat"), "text", "BE0123456789")}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)}

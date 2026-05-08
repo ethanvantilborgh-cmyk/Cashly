@@ -90,13 +90,13 @@ export default function SettingsPage() {
               <h2 className="font-semibold text-slate-900">{tr("profileSection")}</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">{field("name", tr("companyName"), "text", "Acme SRL")}</div>
-              <div className="col-span-2">{field("address", tr("companyAddress"), "text", "Rue de la Paix 10")}</div>
-              <div>{field("city", tr("companyCity"), "text", "1000 Bruxelles")}</div>
-              <div>{field("country", tr("companyCountry"), "text", "Belgique")}</div>
+              <div className="col-span-2">{field("name", tr("companyName"), "text", tr("placeholderCompanyName"))}</div>
+              <div className="col-span-2">{field("address", tr("companyAddress"), "text", tr("placeholderCompanyAddress"))}</div>
+              <div>{field("city", tr("companyCity"), "text", tr("placeholderCompanyCity"))}</div>
+              <div>{field("country", tr("companyCountry"), "text", tr("placeholderCompanyCountry"))}</div>
               <div>{field("vat", tr("companyVat"), "text", "BE0123456789")}</div>
               <div>{field("phone", tr("companyPhone"), "tel", "+32 2 123 45 67")}</div>
-              <div className="col-span-2">{field("email", tr("companyEmail"), "email", "factures@acme.be")}</div>
+              <div className="col-span-2">{field("email", tr("companyEmail"), "email", tr("placeholderBillingEmail"))}</div>
             </div>
           </div>
 

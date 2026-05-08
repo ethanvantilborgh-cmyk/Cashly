@@ -88,8 +88,8 @@ export default function InvoicesPage() {
 
   function sendReminder(inv: Invoice) {
     const ttc = invoiceTotalTTC(inv.lines).toLocaleString(locale, { minimumFractionDigits: 2 });
-    const subject = encodeURIComponent(`Rappel : Facture ${inv.id} — ${ttc} €`);
-    const body = encodeURIComponent(`Bonjour,\n\nNous vous rappelons que la facture ${inv.id} d'un montant de ${ttc} € est arrivée à échéance le ${inv.due}.\n\nMerci de bien vouloir procéder au règlement.\n\nCordialement`);
+    const subject = encodeURIComponent(tr("reminderEmailSubject").replace("{id}", inv.id).replace("{amount}", ttc));
+    const body = encodeURIComponent(tr("reminderEmailBody").replace("{id}", inv.id).replace("{amount}", ttc).replace("{due}", inv.due));
     window.open(`mailto:${inv.email}?subject=${subject}&body=${body}`);
   }
 
@@ -102,7 +102,7 @@ export default function InvoicesPage() {
       });
       const data = await res.json();
       if (data.url) { await navigator.clipboard.writeText(data.url); showToast(tr("paymentLinkCopied")); }
-      else showToast("⚠️ " + (data.error || "Error"));
+      else showToast("⚠️ " + (data.error || tr("connectionError")));
     } catch { showToast(tr("connectionError")); }
     setPayLoading(null);
   }
@@ -115,7 +115,7 @@ export default function InvoicesPage() {
 
   function exportCSV() {
     const rows = [
-      [tr("reference"), tr("client"), "Email", tr("amountHT"), tr("vatAmount"), tr("totalTTC"), tr("status"), tr("date"), tr("dueDate"), tr("recurring")],
+      [tr("reference"), tr("client"), tr("email"), tr("amountHT"), tr("vatAmount"), tr("totalTTC"), tr("status"), tr("date"), tr("dueDate"), tr("recurring")],
       ...invoices.map(i => {
         const ttc = invoiceTotalTTC(i.lines);
         const tva = invoiceTotalTVA(i.lines);

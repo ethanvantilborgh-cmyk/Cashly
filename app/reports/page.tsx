@@ -73,7 +73,7 @@ export default function ReportsPage() {
     const rows = [
       [tr("monthLabel"), tr("revenue") + " (€)", tr("expensesLabel") + " (€)", tr("netProfit") + " (€)"],
       ...monthly.map(m => [m.month, m.revenus.toString(), m.depenses.toString(), (m.revenus - m.depenses).toString()]),
-      ["TOTAL", totalRev.toString(), totalDep.toString(), totalBen.toString()],
+      [tr("totalRow").toUpperCase(), totalRev.toString(), totalDep.toString(), totalBen.toString()],
     ];
     const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });

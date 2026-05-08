@@ -358,6 +358,30 @@ export const t = {
     exampleLastName: "Dupont",
     exampleCompanyType: "Freelance, SARL, SAS...",
     passwordMinChars: "8 caractères minimum",
+
+    // Error messages
+    unknownError: "Erreur inconnue",
+    serverUnreachable: "Impossible de contacter le serveur",
+
+    // Reminder email
+    reminderEmailSubject: "Rappel : Facture {id} — {amount} €",
+    reminderEmailBody: "Bonjour,\n\nNous vous rappelons que la facture {id} d'un montant de {amount} € est arrivée à échéance le {due}.\n\nMerci de bien vouloir procéder au règlement.\n\nCordialement",
+
+    // Default line description
+    defaultLineDescription: "Prestation de services",
+
+    // Client form placeholders
+    placeholderClientName: "Jean Dupont",
+    placeholderClientCompany: "Acme SRL",
+    placeholderClientEmail: "jean@acme.be",
+    placeholderClientAddress: "Rue de la Paix 10, 1000 Bruxelles",
+
+    // Settings form placeholders
+    placeholderCompanyName: "Acme SRL",
+    placeholderCompanyAddress: "Rue de la Paix 10",
+    placeholderCompanyCity: "1000 Bruxelles",
+    placeholderCompanyCountry: "Belgique",
+    placeholderBillingEmail: "factures@acme.be",
   },
 
   en: {
@@ -690,6 +714,30 @@ export const t = {
     exampleLastName: "Smith",
     exampleCompanyType: "Freelance, Ltd, LLC...",
     passwordMinChars: "8 characters minimum",
+
+    // Error messages
+    unknownError: "Unknown error",
+    serverUnreachable: "Unable to reach the server",
+
+    // Reminder email
+    reminderEmailSubject: "Reminder: Invoice {id} — {amount} €",
+    reminderEmailBody: "Hello,\n\nThis is a reminder that invoice {id} for {amount} € was due on {due}.\n\nPlease arrange payment at your earliest convenience.\n\nKind regards",
+
+    // Default line description
+    defaultLineDescription: "Service",
+
+    // Client form placeholders
+    placeholderClientName: "John Smith",
+    placeholderClientCompany: "Acme Ltd",
+    placeholderClientEmail: "john@acme.com",
+    placeholderClientAddress: "10 High Street, London EC1A",
+
+    // Settings form placeholders
+    placeholderCompanyName: "Acme Ltd",
+    placeholderCompanyAddress: "10 High Street",
+    placeholderCompanyCity: "London EC1A 1BB",
+    placeholderCompanyCountry: "Belgium",
+    placeholderBillingEmail: "invoices@acme.com",
   },
 
   nl: {
@@ -1022,6 +1070,30 @@ export const t = {
     exampleLastName: "Jansen",
     exampleCompanyType: "Freelance, BV, NV...",
     passwordMinChars: "Minimaal 8 tekens",
+
+    // Error messages
+    unknownError: "Onbekende fout",
+    serverUnreachable: "Server niet bereikbaar",
+
+    // Reminder email
+    reminderEmailSubject: "Herinnering: Factuur {id} — {amount} €",
+    reminderEmailBody: "Geachte,\n\nWij herinneren u eraan dat factuur {id} voor {amount} € vervallen is op {due}.\n\nGelieve de betaling zo spoedig mogelijk te regelen.\n\nMet vriendelijke groet",
+
+    // Default line description
+    defaultLineDescription: "Dienst",
+
+    // Client form placeholders
+    placeholderClientName: "Jan Janssen",
+    placeholderClientCompany: "Acme BV",
+    placeholderClientEmail: "jan@acme.nl",
+    placeholderClientAddress: "Vredestraat 10, 1000 Brussel",
+
+    // Settings form placeholders
+    placeholderCompanyName: "Acme BV",
+    placeholderCompanyAddress: "Vredestraat 10",
+    placeholderCompanyCity: "1000 Brussel",
+    placeholderCompanyCountry: "België",
+    placeholderBillingEmail: "facturen@acme.nl",
   },
 };
 

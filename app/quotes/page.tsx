@@ -156,7 +156,7 @@ export default function QuotesPage() {
     const newInv = {
       id: `INV-${String(maxId + 1).padStart(3, "0")}`,
       client: q.client, email: q.email,
-      lines: [{ id: Date.now().toString(), description: q.description || "Prestation de services", qty: 1, unitPrice: q.amount, vatRate: q.vatRate }],
+      lines: [{ id: Date.now().toString(), description: q.description || tr("defaultLineDescription"), qty: 1, unitPrice: q.amount, vatRate: q.vatRate }],
       amount: q.amount, status: "pending" as const,
       date: new Date().toISOString().split("T")[0],
       due: q.due, vatRate: q.vatRate, recurring: "none" as const,

@@ -6,8 +6,8 @@ import { LangProvider } from "./context/LangContext";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
-  title: "Cashly — Comptabilité simplifiée",
-  description: "Gérez vos factures, dépenses et rapports financiers en un seul endroit.",
+  title: "Cashly — Simple bookkeeping for freelancers & SMEs",
+  description: "Manage your invoices, expenses and financial reports in one place. FR · EN · NL",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

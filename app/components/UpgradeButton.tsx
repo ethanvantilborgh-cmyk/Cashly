@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useLang } from "../context/LangContext";
 
 export default function UpgradeButton({ label, className }: { label: string; className?: string }) {
+  const { tr } = useLang();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -15,11 +17,11 @@ export default function UpgradeButton({ label, className }: { label: string; cla
       if (data.url) {
         window.location.href = data.url;
       } else {
-        setError(data.error || "Erreur inconnue");
+        setError(data.error || tr("unknownError"));
         setLoading(false);
       }
     } catch (e) {
-      setError("Impossible de contacter le serveur");
+      setError(tr("serverUnreachable"));
       setLoading(false);
     }
   }
