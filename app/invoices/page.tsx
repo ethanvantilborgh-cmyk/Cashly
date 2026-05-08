@@ -48,6 +48,12 @@ export default function InvoicesPage() {
   function persist(updated: Invoice[]) { setInvoices(updated); saveInvoices(updated); }
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000); }
 
+  function nextInvId(list: Invoice[]) {
+    const nums = list.map(i => parseInt(i.id.replace(/\D/g, ""), 10)).filter(n => !isNaN(n));
+    const max = nums.length ? Math.max(...nums) : 0;
+    return `INV-${String(max + 1).padStart(3, "0")}`;
+  }
+
   function markAsPaid(id: string) {
     persist(invoices.map(i => i.id === id ? { ...i, status: "paid" as const } : i));
     showToast("✓ Facture marquée comme payée !");
@@ -61,7 +67,7 @@ export default function InvoicesPage() {
   function duplicateInvoice(inv: Invoice) {
     const dup: Invoice = {
       ...inv,
-      id: `INV-${String(invoices.length + 1).padStart(3, "0")}`,
+      id: nextInvId(invoices),
       status: "pending",
       date: new Date().toISOString().split("T")[0],
       lines: inv.lines.map(l => ({ ...l, id: Date.now().toString() + Math.random() })),
@@ -89,8 +95,9 @@ export default function InvoicesPage() {
   async function copyPaymentLink(inv: Invoice) {
     setPayLoading(inv.id);
     try {
+      const ttc = invoiceTotalTTC(inv.lines);
       const res = await fetch("/api/pay", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: inv.amount, invoiceId: inv.id, clientName: inv.client, vatRate: inv.vatRate }),
+        body: JSON.stringify({ amount: ttc, invoiceId: inv.id, clientName: inv.client, vatRate: 0 }),
       });
       const data = await res.json();
       if (data.url) { await navigator.clipboard.writeText(data.url); showToast("💳 Lien de paiement copié !"); }
@@ -153,7 +160,7 @@ export default function InvoicesPage() {
     } else {
       // Create new invoice
       const newInv: Invoice = {
-        id: `INV-${String(invoices.length + 1).padStart(3, "0")}`,
+        id: nextInvId(invoices),
         client: client.name, email: client.email,
         lines, amount: totalHT, status: "pending",
         date: new Date().toISOString().split("T")[0],

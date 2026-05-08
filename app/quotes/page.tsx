@@ -144,8 +144,10 @@ export default function QuotesPage() {
 
   function convertToInvoice(q: Quote) {
     const invoices = getInvoices();
+    const nums = invoices.map(i => parseInt(i.id.replace(/\D/g, ""), 10)).filter(n => !isNaN(n));
+    const maxId = nums.length ? Math.max(...nums) : 0;
     const newInv = {
-      id: `INV-${String(invoices.length + 1).padStart(3, "0")}`,
+      id: `INV-${String(maxId + 1).padStart(3, "0")}`,
       client: q.client, email: q.email,
       lines: [{ id: Date.now().toString(), description: q.description || "Prestation de services", qty: 1, unitPrice: q.amount, vatRate: q.vatRate }],
       amount: q.amount, status: "pending" as const,

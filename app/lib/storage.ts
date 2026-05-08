@@ -249,9 +249,11 @@ export function nextRecurringDate(inv: Invoice): string | null {
 
 export function generateNextInvoice(inv: Invoice, allInvoices: Invoice[]): Invoice {
   const months = inv.recurring === "monthly" ? 1 : inv.recurring === "quarterly" ? 3 : 12;
+  const nums = allInvoices.map(i => parseInt(i.id.replace(/\D/g, ""), 10)).filter(n => !isNaN(n));
+  const maxId = nums.length ? Math.max(...nums) : 0;
   return {
     ...inv,
-    id: `INV-${String(allInvoices.length + 1).padStart(3, "0")}`,
+    id: `INV-${String(maxId + 1).padStart(3, "0")}`,
     date: addMonths(inv.date, months),
     due:  addMonths(inv.due,  months),
     status: "pending",

@@ -18,7 +18,14 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { lang, setLang, tr } = useLang();
   const [pro, setPro] = useState(false);
-  useEffect(() => { setPro(isPro()); }, []);
+  const [invoiceCount, setInvoiceCount] = useState(0);
+  useEffect(() => {
+    setPro(isPro());
+    try {
+      const raw = localStorage.getItem("cashly_invoices");
+      setInvoiceCount(raw ? JSON.parse(raw).length : 0);
+    } catch { setInvoiceCount(0); }
+  }, []);
 
   const NAV = [
     { href: "/dashboard", icon: LayoutDashboard, label: tr("dashboard") },
@@ -85,9 +92,9 @@ export default function Sidebar() {
         ) : (
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
             <p className="text-xs font-semibold text-emerald-700 mb-1">{tr("freePlan")}</p>
-            <p className="text-xs text-emerald-600">3/{FREE_INVOICE_LIMIT} {tr("invoices").toLowerCase()}</p>
+            <p className="text-xs text-emerald-600">{invoiceCount}/{FREE_INVOICE_LIMIT} {tr("invoices").toLowerCase()}</p>
             <div className="mt-2 h-1.5 bg-emerald-100 rounded-full">
-              <div className="h-1.5 bg-emerald-500 rounded-full" style={{ width: `${(3 / FREE_INVOICE_LIMIT) * 100}%` }} />
+              <div className="h-1.5 bg-emerald-500 rounded-full" style={{ width: `${Math.min((invoiceCount / FREE_INVOICE_LIMIT) * 100, 100)}%` }} />
             </div>
             <UpgradeButton label={tr("upgradePro")} className="mt-2 gradient-btn w-full text-xs font-semibold py-1.5 rounded-lg text-white" />
           </div>
