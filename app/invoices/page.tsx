@@ -1,23 +1,25 @@
 "use client";
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
-import { Plus, Search, FileText, Download, Send, X, Check, Lock, Crown } from "lucide-react";
+import { Plus, Search, FileText, Download, Send, X, Check, Lock, Crown, ChevronDown } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { printInvoice } from "../lib/printInvoice";
 import { isPro, FREE_INVOICE_LIMIT } from "../lib/pro";
 import UpgradeButton from "../components/UpgradeButton";
+import { getSavedClients, Client } from "../clients/page";
 
 type Invoice = {
   id: string; client: string; email: string; amount: number;
   status: "paid" | "pending" | "overdue"; date: string; due: string;
+  vatRate: number;
 };
 
 const INITIAL: Invoice[] = [
-  { id: "INV-001", client: "Acme Corp",      email: "contact@acme.com",   amount: 2400, status: "paid",    date: "2025-04-28", due: "2025-05-28" },
-  { id: "INV-002", client: "StartupXYZ",     email: "hello@startup.xyz",  amount: 1800, status: "pending", date: "2025-04-25", due: "2025-05-25" },
-  { id: "INV-003", client: "Design Studio",  email: "info@design.fr",     amount: 950,  status: "overdue", date: "2025-04-10", due: "2025-04-25" },
-  { id: "INV-004", client: "Tech Agency",    email: "billing@tech.io",    amount: 3200, status: "paid",    date: "2025-04-05", due: "2025-05-05" },
-  { id: "INV-005", client: "Cloud Services", email: "finance@cloud.net",  amount: 780,  status: "pending", date: "2025-03-30", due: "2025-04-30" },
+  { id: "INV-001", client: "Acme Corp",      email: "contact@acme.com",   amount: 2400, status: "paid",    date: "2025-04-28", due: "2025-05-28", vatRate: 21 },
+  { id: "INV-002", client: "StartupXYZ",     email: "hello@startup.xyz",  amount: 1800, status: "pending", date: "2025-04-25", due: "2025-05-25", vatRate: 21 },
+  { id: "INV-003", client: "Design Studio",  email: "info@design.fr",     amount: 950,  status: "overdue", date: "2025-04-10", due: "2025-04-25", vatRate: 21 },
+  { id: "INV-004", client: "Tech Agency",    email: "billing@tech.io",    amount: 3200, status: "paid",    date: "2025-04-05", due: "2025-05-05", vatRate: 0 },
+  { id: "INV-005", client: "Cloud Services", email: "finance@cloud.net",  amount: 780,  status: "pending", date: "2025-03-30", due: "2025-04-30", vatRate: 6 },
 ];
 
 export default function InvoicesPage() {
@@ -26,11 +28,13 @@ export default function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
-  const [form, setForm] = useState({ client: "", email: "", amount: "", due: "" });
+  const [form, setForm] = useState({ client: "", email: "", amount: "", due: "", vatRate: "21" });
   const [saved, setSaved] = useState(false);
   const [pro, setPro] = useState(false);
+  const [savedClients, setSavedClients] = useState<Client[]>([]);
+  const [showClientDrop, setShowClientDrop] = useState(false);
 
-  useEffect(() => { setPro(isPro()); }, []);
+  useEffect(() => { setPro(isPro()); setSavedClients(getSavedClients()); }, []);
 
   const STATUS_MAP = {
     paid:    { label: tr("paid"),    className: "status-paid" },
@@ -47,8 +51,14 @@ export default function InvoicesPage() {
     if (!pro && invoices.length >= FREE_INVOICE_LIMIT) {
       setShowUpgrade(true);
     } else {
+      setForm({ client: "", email: "", amount: "", due: "", vatRate: "21" });
       setShowModal(true);
     }
+  }
+
+  function selectClient(c: Client) {
+    setForm(f => ({ ...f, client: c.name, email: c.email }));
+    setShowClientDrop(false);
   }
 
   function createInvoice(e: React.FormEvent) {
@@ -60,10 +70,11 @@ export default function InvoicesPage() {
       status: "pending",
       date: new Date().toISOString().split("T")[0],
       due: form.due,
+      vatRate: parseFloat(form.vatRate),
     };
     setInvoices([newInv, ...invoices]);
     setShowModal(false);
-    setForm({ client: "", email: "", amount: "", due: "" });
+    setForm({ client: "", email: "", amount: "", due: "", vatRate: "21" });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
@@ -141,7 +152,7 @@ export default function InvoicesPage() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                {[tr("reference"), tr("client"), tr("amount"), tr("date"), tr("dueDate"), tr("status"), tr("actions")].map(h => (
+                {[tr("reference"), tr("client"), tr("amountHT"), tr("vatRate"), tr("amountTTC"), tr("dueDate"), tr("status"), tr("actions")].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -154,8 +165,9 @@ export default function InvoicesPage() {
                     <p className="font-medium text-slate-900">{inv.client}</p>
                     <p className="text-xs text-slate-400">{inv.email}</p>
                   </td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">{inv.amount.toLocaleString()} €</td>
-                  <td className="px-4 py-3 text-slate-500">{inv.date}</td>
+                  <td className="px-4 py-3 text-slate-700">{inv.amount.toLocaleString()} €</td>
+                  <td className="px-4 py-3 text-slate-500">{inv.vatRate}%</td>
+                  <td className="px-4 py-3 font-semibold text-slate-900">{(inv.amount * (1 + inv.vatRate / 100)).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
                   <td className="px-4 py-3 text-slate-500">{inv.due}</td>
                   <td className="px-4 py-3">
                     <span className={`badge ${STATUS_MAP[inv.status].className}`}>{STATUS_MAP[inv.status].label}</span>
@@ -186,9 +198,31 @@ export default function InvoicesPage() {
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={createInvoice} className="space-y-4">
+              {/* Client selector */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("clientName")} *</label>
+                {savedClients.length > 0 && (
+                  <div className="relative mb-2">
+                    <button type="button" onClick={() => setShowClientDrop(d => !d)}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-left flex items-center justify-between text-slate-500 hover:border-emerald-400 transition-all">
+                      {form.client || tr("selectClient")}
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                    {showClientDrop && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                        {savedClients.map(c => (
+                          <button key={c.id} type="button" onClick={() => selectClient(c)}
+                            className="w-full text-left px-4 py-3 text-sm hover:bg-emerald-50 transition-colors border-b border-slate-50 last:border-0">
+                            <p className="font-medium text-slate-900">{c.name}</p>
+                            {c.company && <p className="text-xs text-slate-400">{c.company}</p>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <input required value={form.client} onChange={e => setForm({...form, client: e.target.value})}
+                  placeholder={savedClients.length > 0 ? tr("orTypeManually") : ""}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
               </div>
               <div>
@@ -196,11 +230,29 @@ export default function InvoicesPage() {
                 <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("amountEur")} *</label>
-                <input required type="number" min="0" step="0.01" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("amountHT")} (€) *</label>
+                  <input required type="number" min="0" step="0.01" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("vatRate")} *</label>
+                  <select value={form.vatRate} onChange={e => setForm({...form, vatRate: e.target.value})}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 bg-white">
+                    <option value="0">{tr("vat0")}</option>
+                    <option value="6">{tr("vat6")}</option>
+                    <option value="21">{tr("vat21")}</option>
+                  </select>
+                </div>
               </div>
+              {form.amount && (
+                <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-1">
+                  <div className="flex justify-between"><span>HT</span><span>{parseFloat(form.amount || "0").toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between"><span>TVA {form.vatRate}%</span><span>{(parseFloat(form.amount || "0") * parseFloat(form.vatRate) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1"><span>TTC</span><span>{(parseFloat(form.amount || "0") * (1 + parseFloat(form.vatRate) / 100)).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("dueDate")} *</label>
                 <input required type="date" value={form.due} onChange={e => setForm({...form, due: e.target.value})}
