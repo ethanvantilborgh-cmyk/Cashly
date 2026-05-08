@@ -118,15 +118,15 @@ export default function ClientsPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="card p-4">
-            <p className="text-xs text-slate-400 mb-1">Total clients</p>
+            <p className="text-xs text-slate-400 mb-1">{tr("totalClients")}</p>
             <p className="text-xl font-bold text-slate-900">{clients.length}</p>
           </div>
           <div className="card p-4">
-            <p className="text-xs text-slate-400 mb-1">Avec numéro TVA</p>
+            <p className="text-xs text-slate-400 mb-1">{tr("clientsWithVAT")}</p>
             <p className="text-xl font-bold text-emerald-600">{clients.filter(c => c.vat).length}</p>
           </div>
           <div className="card p-4">
-            <p className="text-xs text-slate-400 mb-1">Entreprises</p>
+            <p className="text-xs text-slate-400 mb-1">{tr("clientsCompanies")}</p>
             <p className="text-xl font-bold text-sky-600">{clients.filter(c => c.company).length}</p>
           </div>
         </div>

@@ -107,9 +107,9 @@ export default function ExpensesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-5">
-          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">Total dépenses</p><p className="text-xl font-bold text-slate-900">{expenses.length}</p></div>
-          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">Total montant</p><p className="text-xl font-bold text-red-500">-{expenses.reduce((s,e)=>s+e.amount,0).toLocaleString("fr-FR",{minimumFractionDigits:2})} €</p></div>
-          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">Ce mois</p><p className="text-xl font-bold text-amber-600">-{expenses.filter(e=>e.date.startsWith(new Date().toISOString().slice(0,7))).reduce((s,e)=>s+e.amount,0).toLocaleString("fr-FR",{minimumFractionDigits:2})} €</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("totalExpensesCount")}</p><p className="text-xl font-bold text-slate-900">{expenses.length}</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("totalExpensesAmount")}</p><p className="text-xl font-bold text-red-500">-{expenses.reduce((s,e)=>s+e.amount,0).toLocaleString("fr-FR",{minimumFractionDigits:2})} €</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("thisMonth")}</p><p className="text-xl font-bold text-amber-600">-{expenses.filter(e=>e.date.startsWith(new Date().toISOString().slice(0,7))).reduce((s,e)=>s+e.amount,0).toLocaleString("fr-FR",{minimumFractionDigits:2})} €</p></div>
         </div>
 
         <div className="flex flex-wrap gap-3 mb-4">

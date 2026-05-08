@@ -63,7 +63,7 @@ export default function ServicesPage() {
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <Package className="w-6 h-6 text-sky-500" /> {tr("services")}
             </h1>
-            <p className="text-slate-500 text-sm mt-1">{lang === "en" ? "Your services and rates" : lang === "nl" ? "Uw diensten en tarieven" : "Vos prestations et tarifs enregistrés"}</p>
+            <p className="text-slate-500 text-sm mt-1">{tr("servicesSubtitle")}</p>
           </div>
           <button onClick={openCreate} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
             <Plus className="w-4 h-4" /> {tr("addService")}
@@ -72,16 +72,16 @@ export default function ServicesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">Total services</p><p className="text-xl font-bold text-slate-900">{services.length}</p></div>
-          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">Prix moyen</p><p className="text-xl font-bold text-emerald-600">{services.length ? Math.round(services.reduce((s, x) => s + x.unitPrice, 0) / services.length).toLocaleString("fr-FR") + " €" : "—"}</p></div>
-          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">Prix le plus élevé</p><p className="text-xl font-bold text-sky-600">{services.length ? Math.max(...services.map(s => s.unitPrice)).toLocaleString("fr-FR") + " €" : "—"}</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("servicesTotal")}</p><p className="text-xl font-bold text-slate-900">{services.length}</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("servicesAvgPrice")}</p><p className="text-xl font-bold text-emerald-600">{services.length ? Math.round(services.reduce((s, x) => s + x.unitPrice, 0) / services.length).toLocaleString("fr-FR") + " €" : "—"}</p></div>
+          <div className="card p-4"><p className="text-xs text-slate-400 mb-1">{tr("servicesHighestPrice")}</p><p className="text-xl font-bold text-sky-600">{services.length ? Math.max(...services.map(s => s.unitPrice)).toLocaleString("fr-FR") + " €" : "—"}</p></div>
         </div>
 
         {/* Cards */}
         {services.length === 0 ? (
           <div className="card p-12 text-center">
             <Package className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400 font-medium">{lang === "en" ? "No services yet" : lang === "nl" ? "Geen diensten gevonden" : "Aucun service enregistré"}</p>
+            <p className="text-slate-400 font-medium">{tr("noServices")}</p>
             <button onClick={openCreate} className="mt-4 gradient-btn text-sm font-semibold px-5 py-2 rounded-xl text-white inline-flex items-center gap-2">
               <Plus className="w-4 h-4" /> {tr("addService")}
             </button>
@@ -104,10 +104,10 @@ export default function ServicesPage() {
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-50">
                   <div>
                     <p className="text-lg font-bold text-slate-900">{s.unitPrice.toLocaleString("fr-FR")} €</p>
-                    <p className="text-xs text-slate-400">par {s.unit}</p>
+                    <p className="text-xs text-slate-400">{tr("unitPer")} {s.unit}</p>
                   </div>
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${VAT_COLORS[s.vatRate] || "bg-slate-100 text-slate-600"}`}>
-                    TVA {s.vatRate}%
+                    {tr("vatAmount")} {s.vatRate}%
                   </span>
                 </div>
               </div>
@@ -126,7 +126,7 @@ export default function ServicesPage() {
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("clientName").replace("client", "").replace("Klant", "").replace("Client", "").trim() || tr("description")} *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("serviceName")} *</label>
                 <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={lang === "en" ? "Web development" : lang === "nl" ? "Webontwikkeling" : "Développement web"}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
               </div>
@@ -142,7 +142,7 @@ export default function ServicesPage() {
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{lang === "en" ? "Unit" : lang === "nl" ? "Eenheid" : "Unité"}</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("unit")}</label>
                   <select value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
                     {UNITS.map(u => <option key={u} value={u}>{u}</option>)}

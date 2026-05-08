@@ -9,14 +9,15 @@ import { activatePro } from "../lib/pro";
 import { getDashboardStats, getInvoices, getExpenses, Invoice, Expense } from "../lib/storage";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-function buildMonthly() {
+function buildMonthly(lang: string) {
   const invoices = getInvoices();
   const expenses = getExpenses();
+  const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
   const now = new Date();
   return Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("fr-FR", { month: "short" });
+    const label = d.toLocaleDateString(locale, { month: "short" });
     const revenus  = invoices.filter(inv => inv.status === "paid" && inv.date.startsWith(key)).reduce((s, inv) => s + inv.amount, 0);
     const depenses = expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + e.amount, 0);
     return { month: label.charAt(0).toUpperCase() + label.slice(1, 3), revenus, depenses };
@@ -24,7 +25,7 @@ function buildMonthly() {
 }
 
 function DashboardContent() {
-  const { tr } = useLang();
+  const { lang, tr } = useLang();
   const searchParams = useSearchParams();
   const upgraded = searchParams.get("upgraded") === "true";
 
@@ -34,8 +35,8 @@ function DashboardContent() {
   useEffect(() => {
     if (upgraded) activatePro();
     setStats(getDashboardStats());
-    setMonthly(buildMonthly());
-  }, [upgraded]);
+    setMonthly(buildMonthly(lang));
+  }, [upgraded, lang]);
 
   const STATUS_MAP = {
     paid:    { label: tr("paid"),    className: "status-paid" },
@@ -52,7 +53,7 @@ function DashboardContent() {
         {upgraded && (
           <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
             <PartyPopper className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <p className="text-sm font-semibold text-emerald-700">Bienvenue sur Cashly Pro ! Toutes les fonctionnalités sont débloquées. 🎉</p>
+            <p className="text-sm font-semibold text-emerald-700">{tr("proBannerMessage")}</p>
           </div>
         )}
 
@@ -69,9 +70,9 @@ function DashboardContent() {
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: tr("revenue"),       value: fmt(stats.revenue),    sub: `${stats.recentInvoices.filter(i=>i.status==="paid").length} factures payées`, up: true,  icon: TrendingUp,   color: "text-emerald-600", bg: "bg-emerald-50" },
-            { label: tr("expensesLabel"), value: fmt(stats.totalExp),   sub: `${stats.recentExpenses.length} dépenses`,  up: false, icon: TrendingDown, color: "text-red-500",     bg: "bg-red-50" },
-            { label: tr("netProfit"),     value: fmt(stats.netProfit),  sub: stats.netProfit >= 0 ? "Bénéfice" : "Déficit", up: stats.netProfit >= 0, icon: TrendingUp, color: stats.netProfit >= 0 ? "text-sky-600" : "text-red-500", bg: stats.netProfit >= 0 ? "bg-sky-50" : "bg-red-50" },
+            { label: tr("revenue"),       value: fmt(stats.revenue),    sub: `${stats.recentInvoices.filter(i=>i.status==="paid").length} ${tr("paidInvoicesLabel")}`, up: true,  icon: TrendingUp,   color: "text-emerald-600", bg: "bg-emerald-50" },
+            { label: tr("expensesLabel"), value: fmt(stats.totalExp),   sub: `${stats.recentExpenses.length} ${tr("expensesCountLabel")}`,  up: false, icon: TrendingDown, color: "text-red-500",     bg: "bg-red-50" },
+            { label: tr("netProfit"),     value: fmt(stats.netProfit),  sub: stats.netProfit >= 0 ? tr("profit") : tr("deficit"), up: stats.netProfit >= 0, icon: TrendingUp, color: stats.netProfit >= 0 ? "text-sky-600" : "text-red-500", bg: stats.netProfit >= 0 ? "bg-sky-50" : "bg-red-50" },
             { label: tr("unpaid"),        value: fmt(stats.unpaidAmt),  sub: `${stats.unpaidCount} factures`, up: false, icon: AlertCircle,  color: "text-amber-600",   bg: "bg-amber-50" },
           ].map(({ label, value, sub, up, icon: Icon, color, bg }) => (
             <div key={label} className="card p-5">
@@ -91,11 +92,11 @@ function DashboardContent() {
         <div className="card p-6 mb-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="font-semibold text-slate-900">Revenus vs Dépenses</h2>
-              <p className="text-xs text-slate-400 mt-0.5">6 derniers mois</p>
+              <h2 className="font-semibold text-slate-900">{tr("revenueVsExpenses")}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{tr("reportsSub")}</p>
             </div>
             <Link href="/reports" className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
-              Voir les rapports <ArrowUpRight className="w-3 h-3" />
+              {tr("seeReports")} <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
           <ResponsiveContainer width="100%" height={200}>

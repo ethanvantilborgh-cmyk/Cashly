@@ -120,7 +120,7 @@ export default function QuotesPage() {
     if (editId) {
       const updated = quotes.map(q => q.id === editId ? { ...q, client: form.client, email: form.email, amount: parseFloat(form.amount), due: form.due, vatRate: parseFloat(form.vatRate), description: form.description } : q);
       setQuotes(updated); saveQuotes(updated);
-      showToast(tr("saveChanges") + " ✓");
+      showToast("✓ " + tr("saveChanges"));
     } else {
       const newQ: Quote = {
         id: nextQuoteId(quotes),
@@ -203,8 +203,8 @@ export default function QuotesPage() {
           {[
             { label: tr("quotesTitle"), value: quotes.length, color: "text-slate-900" },
             { label: tr("quoteSent"),   value: quotes.filter(q => q.status === "sent").length, color: "text-sky-600" },
-            { label: tr("quoteAccepted") + " (€)", value: totalAccepted.toLocaleString("fr-FR") + " €", color: "text-emerald-600" },
-            { label: "En attente (€)",   value: totalPending.toLocaleString("fr-FR") + " €",  color: "text-amber-600" },
+            { label: tr("quoteSentValue"),    value: totalAccepted.toLocaleString("fr-FR") + " €", color: "text-emerald-600" },
+            { label: tr("quoteAwaitingValue"), value: totalPending.toLocaleString("fr-FR") + " €",  color: "text-amber-600" },
           ].map(({ label, value, color }) => (
             <div key={label} className="card p-4">
               <p className="text-xs text-slate-400 mb-1">{label}</p>

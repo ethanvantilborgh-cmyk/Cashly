@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { getInvoices, getExpenses, getVatReport, VatQuarter } from "../lib/storage";
 
 export default function ReportsPage() {
-  const { tr } = useLang();
+  const { lang, tr } = useLang();
 
   const [monthly, setMonthly]   = useState<{ month: string; revenus: number; depenses: number }[]>([]);
   const [expByCat, setExpByCat] = useState<{ name: string; value: number; color: string }[]>([]);
@@ -17,6 +17,7 @@ export default function ReportsPage() {
   useEffect(() => {
     const invoices = getInvoices();
     const expenses = getExpenses();
+    const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
 
     // ── Monthly revenue vs expenses (last 6 months) ─────────────────────────
     const now = new Date();
@@ -24,7 +25,7 @@ export default function ReportsPage() {
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = d.toLocaleDateString("fr-FR", { month: "short" });
+      const label = d.toLocaleDateString(locale, { month: "short" });
       const revenus  = invoices.filter(inv => inv.status === "paid" && inv.date.startsWith(key)).reduce((s, inv) => s + inv.amount, 0);
       const depenses = expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + e.amount, 0);
       months.push({ month: label.charAt(0).toUpperCase() + label.slice(1, 3), revenus, depenses });
@@ -51,14 +52,14 @@ export default function ReportsPage() {
     const pending = invoices.filter(i => i.status === "pending").reduce((s, i) => s + i.amount, 0);
     const overdue = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
     setInvStatus([
-      { name: "Payées",     value: paid,    color: "#10b981" },
-      { name: "En attente", value: pending, color: "#f59e0b" },
-      { name: "En retard",  value: overdue, color: "#ef4444" },
+      { name: tr("paid"),    value: paid,    color: "#10b981" },
+      { name: tr("pending"), value: pending, color: "#f59e0b" },
+      { name: tr("overdue"), value: overdue, color: "#ef4444" },
     ]);
 
     // ── VAT report ───────────────────────────────────────────────────────────
     setVatReport(getVatReport());
-  }, []);
+  }, [lang]);
 
   const totalRev = monthly.reduce((s, m) => s + m.revenus, 0);
   const totalDep = monthly.reduce((s, m) => s + m.depenses, 0);
@@ -89,9 +90,9 @@ export default function ReportsPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <BarChart2 className="w-6 h-6 text-violet-500" /> Rapports financiers
+              <BarChart2 className="w-6 h-6 text-violet-500" /> {tr("reportsTitle")}
             </h1>
-            <p className="text-slate-500 text-sm mt-1">6 derniers mois · données réelles</p>
+            <p className="text-slate-500 text-sm mt-1">{tr("reportsSub")} · {tr("realData")}</p>
           </div>
           <button onClick={exportCSV} className="flex items-center gap-2 border border-slate-200 text-sm font-semibold px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
             <Download className="w-4 h-4" /> {tr("exportCsv")}
@@ -101,10 +102,10 @@ export default function ReportsPage() {
         {/* KPIs */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Revenus totaux",   value: `${totalRev.toLocaleString("fr-FR")} €`, color: "text-emerald-600", icon: TrendingUp },
-            { label: "Dépenses totales", value: `${totalDep.toLocaleString("fr-FR")} €`, color: "text-red-500",     icon: Receipt },
-            { label: "Bénéfice net",     value: `${totalBen.toLocaleString("fr-FR")} €`, color: "text-sky-600",     icon: TrendingUp },
-            { label: "Marge nette",      value: `${margin} %`,                           color: "text-violet-600",  icon: BarChart2 },
+            { label: tr("totalRevenue"),  value: `${totalRev.toLocaleString("fr-FR")} €`, color: "text-emerald-600", icon: TrendingUp },
+            { label: tr("totalExpenses"), value: `${totalDep.toLocaleString("fr-FR")} €`, color: "text-red-500",     icon: Receipt },
+            { label: tr("netProfit"),     value: `${totalBen.toLocaleString("fr-FR")} €`, color: "text-sky-600",     icon: TrendingUp },
+            { label: tr("netMargin"),     value: `${margin} %`,                           color: "text-violet-600",  icon: BarChart2 },
           ].map(({ label, value, color, icon: Icon }) => (
             <div key={label} className="card p-5">
               <div className="flex items-center justify-between mb-2">
@@ -118,8 +119,8 @@ export default function ReportsPage() {
 
         {/* Revenus vs Dépenses */}
         <div className="card p-6 mb-6">
-          <h2 className="font-semibold text-slate-900 mb-1">Revenus vs Dépenses</h2>
-          <p className="text-xs text-slate-400 mb-5">Comparaison mensuelle (6 derniers mois)</p>
+          <h2 className="font-semibold text-slate-900 mb-1">{tr("revenueVsExpenses")}</h2>
+          <p className="text-xs text-slate-400 mb-5">{tr("monthlyComparison")}</p>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={monthly} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -136,23 +137,23 @@ export default function ReportsPage() {
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
           {/* Bénéfice */}
           <div className="card p-6">
-            <h2 className="font-semibold text-slate-900 mb-1">Évolution du bénéfice</h2>
-            <p className="text-xs text-slate-400 mb-5">Bénéfice mensuel net</p>
+            <h2 className="font-semibold text-slate-900 mb-1">{tr("profitEvolution")}</h2>
+            <p className="text-xs text-slate-400 mb-5">{tr("monthlyProfit")}</p>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={profit}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}k€`} />
                 <Tooltip formatter={(v) => `${Number(v).toLocaleString("fr-FR")} €`} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
-                <Line type="monotone" dataKey="benefice" name="Bénéfice" stroke="#0ea5e9" strokeWidth={2.5} dot={{ fill: "#0ea5e9", r: 4 }} />
+                <Line type="monotone" dataKey="benefice" name={tr("netProfit")} stroke="#0ea5e9" strokeWidth={2.5} dot={{ fill: "#0ea5e9", r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
           {/* Dépenses par catégorie */}
           <div className="card p-6">
-            <h2 className="font-semibold text-slate-900 mb-1">Dépenses par catégorie</h2>
-            <p className="text-xs text-slate-400 mb-5">Répartition totale</p>
+            <h2 className="font-semibold text-slate-900 mb-1">{tr("expensesByCategory")}</h2>
+            <p className="text-xs text-slate-400 mb-5">{tr("thisMonth")}</p>
             {expByCat.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
@@ -166,7 +167,7 @@ export default function ReportsPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-48 text-slate-300 text-sm">Aucune dépense</div>
+              <div className="flex items-center justify-center h-48 text-slate-300 text-sm">{tr("noExpense")}</div>
             )}
           </div>
         </div>
@@ -174,7 +175,7 @@ export default function ReportsPage() {
         {/* Statut factures */}
         <div className="card p-6 mb-6">
           <h2 className="font-semibold text-slate-900 mb-5 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-emerald-500" /> Statut des factures
+            <FileText className="w-4 h-4 text-emerald-500" /> {tr("invoiceStatus")}
           </h2>
           <div className="grid grid-cols-3 gap-6">
             {invStatus.map(({ name, value, color }) => (
@@ -193,18 +194,18 @@ export default function ReportsPage() {
         {vatReport.length > 0 && (
           <div className="card p-6">
             <h2 className="font-semibold text-slate-900 mb-1 flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-violet-500" /> Rapport TVA trimestriel
+              <Receipt className="w-4 h-4 text-violet-500" /> {tr("vatReportTitle")}
             </h2>
-            <p className="text-xs text-slate-400 mb-5">TVA collectée sur factures payées vs TVA déductible sur dépenses</p>
+            <p className="text-xs text-slate-400 mb-5">{tr("vatCollectedLabel")} vs {tr("vatDeductibleLabel")}</p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100">
-                    <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Trimestre</th>
-                    <th className="text-right py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">CA HT</th>
-                    <th className="text-right py-2 px-3 text-xs font-semibold text-emerald-600 uppercase tracking-wide">TVA collectée</th>
-                    <th className="text-right py-2 px-3 text-xs font-semibold text-sky-600 uppercase tracking-wide">TVA déductible</th>
-                    <th className="text-right py-2 px-3 text-xs font-semibold text-violet-600 uppercase tracking-wide">TVA à payer</th>
+                    <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">{tr("quarterLabel")}</th>
+                    <th className="text-right py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">{tr("revenueHTLabel")}</th>
+                    <th className="text-right py-2 px-3 text-xs font-semibold text-emerald-600 uppercase tracking-wide">{tr("vatCollectedLabel")}</th>
+                    <th className="text-right py-2 px-3 text-xs font-semibold text-sky-600 uppercase tracking-wide">{tr("vatDeductibleLabel")}</th>
+                    <th className="text-right py-2 px-3 text-xs font-semibold text-violet-600 uppercase tracking-wide">{tr("vatDueLabel")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -224,7 +225,7 @@ export default function ReportsPage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-slate-200 bg-slate-50">
-                    <td className="py-3 px-3 font-bold text-slate-900">Total</td>
+                    <td className="py-3 px-3 font-bold text-slate-900">{tr("totalRow")}</td>
                     <td className="py-3 px-3 text-right font-bold text-slate-700">{vatReport.reduce((s, q) => s + q.revenueHT, 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
                     <td className="py-3 px-3 text-right font-bold text-emerald-600">{vatReport.reduce((s, q) => s + q.vatCollected, 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>
                     <td className="py-3 px-3 text-right font-bold text-sky-600">-{vatReport.reduce((s, q) => s + q.vatDeductible, 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</td>

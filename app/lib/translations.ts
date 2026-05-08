@@ -129,7 +129,6 @@ export const t = {
     profitEvolution: "Évolution du bénéfice",
     monthlyProfit: "Bénéfice mensuel net",
     expensesByCategory: "Dépenses par catégorie",
-    thisMonth: "Répartition ce mois-ci",
     invoiceStatus: "Statut des factures",
 
     // Auth
@@ -199,6 +198,64 @@ export const t = {
     addClient: "Ajouter le client",
     addService: "Ajouter le service",
     quoteConverted2: "Converti",
+
+    // Services page
+    servicesSubtitle: "Vos prestations et tarifs enregistrés",
+    servicesTotal: "Total services",
+    servicesAvgPrice: "Prix moyen",
+    servicesHighestPrice: "Prix le plus élevé",
+    noServices: "Aucun service enregistré",
+    serviceName: "Nom du service",
+    unit: "Unité",
+    unitPer: "par",
+
+    // Invoice lines
+    invoiceMarkedPaid: "Facture marquée comme payée !",
+    invoiceDuplicated: "Facture dupliquée !",
+    invoiceLines: "Lignes de facturation",
+    catalog: "Catalogue",
+    lines: "Lignes",
+    addLine: "Ajouter une ligne",
+    subtotalHT: "Sous-total HT",
+    totalTTC: "Total TTC",
+    qty: "Qté",
+    unitPriceLabel: "P.U. HT",
+
+    // Expenses stats
+    totalExpensesCount: "Total dépenses",
+    totalExpensesAmount: "Montant total",
+    thisMonth: "Ce mois",
+
+    // Quotes stats
+    quoteSentValue: "Envoyés (€)",
+    quoteAwaitingValue: "En attente (€)",
+
+    // Clients stats
+    totalClients: "Total clients",
+    clientsWithVAT: "Avec numéro TVA",
+    clientsCompanies: "Entreprises",
+
+    // Dashboard
+    proBannerMessage: "Bienvenue sur Cashly Pro ! Toutes les fonctionnalités sont débloquées. 🎉",
+    paidInvoicesLabel: "factures payées",
+    expensesCountLabel: "dépenses",
+    profit: "Bénéfice",
+    deficit: "Déficit",
+    seeReports: "Voir les rapports",
+
+    // Reports
+    vatReportTitle: "Rapport TVA trimestriel",
+    vatCollectedLabel: "TVA collectée",
+    vatDeductibleLabel: "TVA déductible",
+    vatDueLabel: "TVA à payer",
+    revenueHTLabel: "CA HT",
+    realData: "données réelles",
+    totalRow: "Total",
+    quarterLabel: "Trimestre",
+
+    // Sidebar Pro
+    proPlan: "Cashly Pro",
+    unlimitedInvoices: "Factures illimitées ✓",
   },
 
   en: {
@@ -318,7 +375,6 @@ export const t = {
     profitEvolution: "Profit evolution",
     monthlyProfit: "Monthly net profit",
     expensesByCategory: "Expenses by category",
-    thisMonth: "Distribution this month",
     invoiceStatus: "Invoice status",
 
     welcome: "Welcome back 👋",
@@ -384,6 +440,56 @@ export const t = {
     addClient: "Add client",
     addService: "Add service",
     quoteConverted2: "Converted",
+
+    servicesSubtitle: "Your services and rates",
+    servicesTotal: "Total services",
+    servicesAvgPrice: "Average price",
+    servicesHighestPrice: "Highest price",
+    noServices: "No services yet",
+    serviceName: "Service name",
+    unit: "Unit",
+    unitPer: "per",
+
+    invoiceMarkedPaid: "Invoice marked as paid!",
+    invoiceDuplicated: "Invoice duplicated!",
+    invoiceLines: "Invoice lines",
+    catalog: "Catalog",
+    lines: "Lines",
+    addLine: "Add a line",
+    subtotalHT: "Subtotal excl. VAT",
+    totalTTC: "Total incl. VAT",
+    qty: "Qty",
+    unitPriceLabel: "Unit price",
+
+    totalExpensesCount: "Total expenses",
+    totalExpensesAmount: "Total amount",
+    thisMonth: "This month",
+
+    quoteSentValue: "Sent (€)",
+    quoteAwaitingValue: "Awaiting (€)",
+
+    totalClients: "Total clients",
+    clientsWithVAT: "With VAT number",
+    clientsCompanies: "Companies",
+
+    proBannerMessage: "Welcome to Cashly Pro! All features are now unlocked. 🎉",
+    paidInvoicesLabel: "paid invoices",
+    expensesCountLabel: "expenses",
+    profit: "Profit",
+    deficit: "Deficit",
+    seeReports: "See reports",
+
+    vatReportTitle: "Quarterly VAT report",
+    vatCollectedLabel: "VAT collected",
+    vatDeductibleLabel: "Deductible VAT",
+    vatDueLabel: "VAT due",
+    revenueHTLabel: "Revenue excl. VAT",
+    realData: "real data",
+    totalRow: "Total",
+    quarterLabel: "Quarter",
+
+    proPlan: "Cashly Pro",
+    unlimitedInvoices: "Unlimited invoices ✓",
   },
 
   nl: {
@@ -503,7 +609,6 @@ export const t = {
     profitEvolution: "Winst evolutie",
     monthlyProfit: "Maandelijkse nettowinst",
     expensesByCategory: "Uitgaven per categorie",
-    thisMonth: "Verdeling deze maand",
     invoiceStatus: "Factuurstatus",
 
     welcome: "Welkom terug 👋",
@@ -569,6 +674,56 @@ export const t = {
     addClient: "Klant toevoegen",
     addService: "Dienst toevoegen",
     quoteConverted2: "Omgezet",
+
+    servicesSubtitle: "Uw diensten en tarieven",
+    servicesTotal: "Totaal diensten",
+    servicesAvgPrice: "Gemiddelde prijs",
+    servicesHighestPrice: "Hoogste prijs",
+    noServices: "Geen diensten gevonden",
+    serviceName: "Naam dienst",
+    unit: "Eenheid",
+    unitPer: "per",
+
+    invoiceMarkedPaid: "Factuur gemarkeerd als betaald!",
+    invoiceDuplicated: "Factuur gedupliceerd!",
+    invoiceLines: "Factuurregels",
+    catalog: "Catalogus",
+    lines: "Regels",
+    addLine: "Regel toevoegen",
+    subtotalHT: "Subtotaal excl. BTW",
+    totalTTC: "Totaal incl. BTW",
+    qty: "Aantal",
+    unitPriceLabel: "Eenheidsprijs",
+
+    totalExpensesCount: "Totaal uitgaven",
+    totalExpensesAmount: "Totaal bedrag",
+    thisMonth: "Deze maand",
+
+    quoteSentValue: "Verzonden (€)",
+    quoteAwaitingValue: "In behandeling (€)",
+
+    totalClients: "Totaal klanten",
+    clientsWithVAT: "Met BTW-nummer",
+    clientsCompanies: "Bedrijven",
+
+    proBannerMessage: "Welkom bij Cashly Pro! Alle functies zijn nu beschikbaar. 🎉",
+    paidInvoicesLabel: "betaalde facturen",
+    expensesCountLabel: "uitgaven",
+    profit: "Winst",
+    deficit: "Tekort",
+    seeReports: "Rapporten bekijken",
+
+    vatReportTitle: "Kwartaal BTW-rapport",
+    vatCollectedLabel: "Geïnde BTW",
+    vatDeductibleLabel: "Aftrekbare BTW",
+    vatDueLabel: "Te betalen BTW",
+    revenueHTLabel: "Omzet excl. BTW",
+    realData: "echte gegevens",
+    totalRow: "Totaal",
+    quarterLabel: "Kwartaal",
+
+    proPlan: "Cashly Pro",
+    unlimitedInvoices: "Onbeperkte facturen ✓",
   },
 };
 

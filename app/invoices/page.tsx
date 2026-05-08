@@ -14,14 +14,14 @@ import {
   generateNextInvoice, nextRecurringDate,
 } from "../lib/storage";
 
-const RECURRING_LABELS: Record<RecurringFreq, string> = {
-  none: "", monthly: "🔁 Mensuelle", quarterly: "🔁 Trimestrielle", yearly: "🔁 Annuelle",
-};
-
 type StatusFilter = "all" | "paid" | "pending" | "overdue";
 
 export default function InvoicesPage() {
   const { tr } = useLang();
+
+  const RECURRING_LABELS: Record<RecurringFreq, string> = {
+    none: "", monthly: "🔁 " + tr("recurringMonthly"), quarterly: "🔁 " + tr("recurringQuarterly"), yearly: "🔁 " + tr("recurringYearly"),
+  };
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -56,7 +56,7 @@ export default function InvoicesPage() {
 
   function markAsPaid(id: string) {
     persist(invoices.map(i => i.id === id ? { ...i, status: "paid" as const } : i));
-    showToast("✓ Facture marquée comme payée !");
+    showToast("✓ " + tr("invoiceMarkedPaid"));
   }
 
   function deleteInvoice(id: string) {
@@ -73,7 +73,7 @@ export default function InvoicesPage() {
       lines: inv.lines.map(l => ({ ...l, id: Date.now().toString() + Math.random() })),
     };
     persist([dup, ...invoices]);
-    showToast(`✓ ${dup.id} dupliquée !`);
+    showToast("✓ " + dup.id + " — " + tr("invoiceDuplicated"));
   }
 
   function openEdit(inv: Invoice) {
@@ -189,7 +189,7 @@ export default function InvoicesPage() {
   };
 
   const FILTERS: { key: StatusFilter; label: string; count: number }[] = [
-    { key: "all",     label: "Toutes",      count: invoices.length },
+    { key: "all",     label: tr("all"),     count: invoices.length },
     { key: "pending", label: tr("pending"), count: invoices.filter(i => i.status === "pending").length },
     { key: "overdue", label: tr("overdue"), count: invoices.filter(i => i.status === "overdue").length },
     { key: "paid",    label: tr("paid"),    count: invoices.filter(i => i.status === "paid").length },
@@ -283,7 +283,7 @@ export default function InvoicesPage() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                {[tr("reference"), tr("client"), "Lignes", tr("amountHT"), tr("amountTTC"), tr("dueDate"), tr("status"), tr("actions")].map(h => (
+                {[tr("reference"), tr("client"), tr("lines"), tr("amountHT"), tr("amountTTC"), tr("dueDate"), tr("status"), tr("actions")].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -395,10 +395,10 @@ export default function InvoicesPage() {
               {/* Line items */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-700">Lignes de facturation</label>
+                  <label className="text-sm font-medium text-slate-700">{tr("invoiceLines")}</label>
                   <button type="button" onClick={() => setShowCatalog(s => !s)}
                     className="flex items-center gap-1.5 text-xs font-semibold text-sky-600 hover:text-sky-700 px-3 py-1.5 rounded-lg hover:bg-sky-50 transition-colors">
-                    <Package className="w-3.5 h-3.5" /> Catalogue
+                    <Package className="w-3.5 h-3.5" /> {tr("catalog")}
                   </button>
                 </div>
 
@@ -419,10 +419,10 @@ export default function InvoicesPage() {
 
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1 text-xs font-semibold text-slate-400 uppercase px-1">
-                    <span className="col-span-5">Description</span>
-                    <span className="col-span-2 text-center">Qté</span>
-                    <span className="col-span-2 text-right">P.U. €</span>
-                    <span className="col-span-2 text-right">TVA</span>
+                    <span className="col-span-5">{tr("description")}</span>
+                    <span className="col-span-2 text-center">{tr("qty")}</span>
+                    <span className="col-span-2 text-right">{tr("unitPriceLabel")}</span>
+                    <span className="col-span-2 text-right">{tr("vatAmount")}</span>
                     <span className="col-span-1"></span>
                   </div>
                   {lines.map(line => (
@@ -447,13 +447,13 @@ export default function InvoicesPage() {
 
                 <button type="button" onClick={() => setLines(ls => [...ls, newLine(lines[lines.length - 1]?.vatRate ?? 21)])}
                   className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition-colors">
-                  <Plus className="w-3.5 h-3.5" /> Ajouter une ligne
+                  <Plus className="w-3.5 h-3.5" /> {tr("addLine")}
                 </button>
 
                 <div className="mt-3 bg-slate-50 rounded-xl p-3 space-y-1 text-xs">
-                  <div className="flex justify-between text-slate-600"><span>Sous-total HT</span><span>{totalHT.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
-                  <div className="flex justify-between text-slate-600"><span>TVA</span><span>{totalTVA.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
-                  <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1"><span>Total TTC</span><span>{totalTTC.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between text-slate-600"><span>{tr("subtotalHT")}</span><span>{totalHT.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between text-slate-600"><span>{tr("vatAmount")}</span><span>{totalTVA.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
+                  <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1"><span>{tr("totalTTC")}</span><span>{totalTTC.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</span></div>
                 </div>
               </div>
 

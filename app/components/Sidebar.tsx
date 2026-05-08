@@ -85,9 +85,9 @@ export default function Sidebar() {
           <div className="bg-gradient-to-br from-emerald-500 to-sky-500 rounded-xl p-3 text-white">
             <div className="flex items-center gap-1.5 mb-1">
               <Crown className="w-3.5 h-3.5" />
-              <p className="text-xs font-bold">Cashly Pro</p>
+              <p className="text-xs font-bold">{tr("proPlan")}</p>
             </div>
-            <p className="text-xs opacity-90">Factures illimitées ✓</p>
+            <p className="text-xs opacity-90">{tr("unlimitedInvoices")}</p>
           </div>
         ) : (
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
