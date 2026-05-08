@@ -359,6 +359,27 @@ export const t = {
     exampleCompanyType: "Freelance, SARL, SAS...",
     passwordMinChars: "8 caractères minimum",
 
+    // Expense categories
+    catSoftware: "Logiciels",
+    catTransport: "Transport",
+    catInfrastructure: "Infrastructure",
+    catMarketing: "Marketing",
+    catSupplies: "Fournitures",
+    catTraining: "Formation",
+    catMeals: "Repas",
+    catOther: "Autre",
+
+    // Service units
+    unitHour: "heure",
+    unitDay: "jour",
+    unitPackage: "forfait",
+    unitUnit: "unité",
+    unitMonth: "mois",
+
+    // Quarter / pricing
+    quarterPrefix: "T",
+    perMonth: "/mois",
+
     // Error messages
     unknownError: "Erreur inconnue",
     serverUnreachable: "Impossible de contacter le serveur",
@@ -715,6 +736,27 @@ export const t = {
     exampleCompanyType: "Freelance, Ltd, LLC...",
     passwordMinChars: "8 characters minimum",
 
+    // Expense categories
+    catSoftware: "Software",
+    catTransport: "Transport",
+    catInfrastructure: "Infrastructure",
+    catMarketing: "Marketing",
+    catSupplies: "Supplies",
+    catTraining: "Training",
+    catMeals: "Meals",
+    catOther: "Other",
+
+    // Service units
+    unitHour: "hour",
+    unitDay: "day",
+    unitPackage: "package",
+    unitUnit: "unit",
+    unitMonth: "month",
+
+    // Quarter / pricing
+    quarterPrefix: "Q",
+    perMonth: "/month",
+
     // Error messages
     unknownError: "Unknown error",
     serverUnreachable: "Unable to reach the server",
@@ -1070,6 +1112,27 @@ export const t = {
     exampleLastName: "Jansen",
     exampleCompanyType: "Freelance, BV, NV...",
     passwordMinChars: "Minimaal 8 tekens",
+
+    // Expense categories
+    catSoftware: "Software",
+    catTransport: "Transport",
+    catInfrastructure: "Infrastructuur",
+    catMarketing: "Marketing",
+    catSupplies: "Benodigdheden",
+    catTraining: "Opleiding",
+    catMeals: "Maaltijden",
+    catOther: "Overig",
+
+    // Service units
+    unitHour: "uur",
+    unitDay: "dag",
+    unitPackage: "forfait",
+    unitUnit: "eenheid",
+    unitMonth: "maand",
+
+    // Quarter / pricing
+    quarterPrefix: "K",
+    perMonth: "/maand",
 
     // Error messages
     unknownError: "Onbekende fout",

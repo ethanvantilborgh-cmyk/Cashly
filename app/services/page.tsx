@@ -5,11 +5,10 @@ import { Package, Plus, X, Check, Pencil, Trash2, Tag } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { getServices, saveServices, Service } from "../lib/storage";
 
-const UNITS_FR = ["heure", "jour", "forfait", "unité", "mois"];
-const UNITS_EN = ["hour", "day", "package", "unit", "month"];
-const UNITS_NL = ["uur", "dag", "forfait", "eenheid", "maand"];
+// Language-agnostic unit codes stored in localStorage
+const UNIT_CODES = ["hour", "day", "package", "unit", "month"] as const;
 
-const EMPTY: Omit<Service, "id"> = { name: "", description: "", unitPrice: 0, vatRate: 21, unit: "forfait" };
+const EMPTY: Omit<Service, "id"> = { name: "", description: "", unitPrice: 0, vatRate: 21, unit: "package" };
 
 export default function ServicesPage() {
   const { lang, tr } = useLang();
@@ -20,7 +19,14 @@ export default function ServicesPage() {
   const [form, setForm] = useState(EMPTY);
   const [toast, setToast] = useState("");
 
-  const UNITS = lang === "nl" ? UNITS_NL : lang === "en" ? UNITS_EN : UNITS_FR;
+  // Translated labels for unit codes — must be inside component (uses tr)
+  const UNIT_LABELS: Record<string, string> = {
+    hour:    tr("unitHour"),
+    day:     tr("unitDay"),
+    package: tr("unitPackage"),
+    unit:    tr("unitUnit"),
+    month:   tr("unitMonth"),
+  };
 
   useEffect(() => { setServices(getServices()); }, []);
 
@@ -105,7 +111,7 @@ export default function ServicesPage() {
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-50">
                   <div>
                     <p className="text-lg font-bold text-slate-900">{s.unitPrice.toLocaleString(locale)} €</p>
-                    <p className="text-xs text-slate-400">{tr("unitPer")} {s.unit}</p>
+                    <p className="text-xs text-slate-400">{tr("unitPer")} {UNIT_LABELS[s.unit] || s.unit}</p>
                   </div>
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${VAT_COLORS[s.vatRate] || "bg-slate-100 text-slate-600"}`}>
                     {tr("vatAmount")} {s.vatRate}%
@@ -146,7 +152,9 @@ export default function ServicesPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("unit")}</label>
                   <select value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
-                    {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                    {UNIT_CODES.map(code => (
+                      <option key={code} value={code}>{UNIT_LABELS[code]}</option>
+                    ))}
                   </select>
                 </div>
               </div>

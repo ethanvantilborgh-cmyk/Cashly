@@ -33,19 +33,24 @@ export default function ReportsPage() {
     setMonthly(months);
 
     // ── Expenses by category ─────────────────────────────────────────────────
-    const COLORS: Record<string, string> = {
-      Logiciels: "#8b5cf6", Software: "#8b5cf6",
-      Transport: "#0ea5e9",
-      Infrastructure: "#64748b", Infrastructuur: "#64748b",
-      Marketing: "#f97316",
-      Fournitures: "#f59e0b", Supplies: "#f59e0b", Benodigdheden: "#f59e0b",
-      Formation: "#10b981", Training: "#10b981", Opleiding: "#10b981",
-      Repas: "#f43f5e", Meals: "#f43f5e", Maaltijden: "#f43f5e",
-      Autre: "#94a3b8", Other: "#94a3b8", Overig: "#94a3b8",
+    const CAT_COLORS: Record<string, string> = {
+      software: "#8b5cf6", transport: "#0ea5e9", infrastructure: "#64748b",
+      marketing: "#f97316", supplies: "#f59e0b", training: "#10b981",
+      meals: "#f43f5e", other: "#94a3b8",
+    };
+    const CAT_LABELS: Record<string, string> = {
+      software: tr("catSoftware"), transport: tr("catTransport"),
+      infrastructure: tr("catInfrastructure"), marketing: tr("catMarketing"),
+      supplies: tr("catSupplies"), training: tr("catTraining"),
+      meals: tr("catMeals"), other: tr("catOther"),
     };
     const catMap: Record<string, number> = {};
     expenses.forEach(e => { catMap[e.category] = (catMap[e.category] || 0) + e.amount; });
-    setExpByCat(Object.entries(catMap).map(([name, value]) => ({ name, value, color: COLORS[name] || "#94a3b8" })));
+    setExpByCat(Object.entries(catMap).map(([code, value]) => ({
+      name: CAT_LABELS[code] || code,
+      value,
+      color: CAT_COLORS[code] || "#94a3b8",
+    })));
 
     // ── Invoice status breakdown ─────────────────────────────────────────────
     const paid    = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
@@ -79,7 +84,7 @@ export default function ReportsPage() {
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `cashly-rapport-${new Date().toISOString().split("T")[0]}.csv`;
+    a.href = url; a.download = `cashly-${tr("reports").toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`;
     a.click(); URL.revokeObjectURL(url);
   }
 
@@ -210,8 +215,8 @@ export default function ReportsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {vatReport.map(q => (
-                    <tr key={q.label} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 px-3 font-semibold text-slate-900">{q.label}</td>
+                    <tr key={`${q.year}-${q.quarter}`} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-3 px-3 font-semibold text-slate-900">{tr("quarterPrefix")}{q.quarter} {q.year}</td>
                       <td className="py-3 px-3 text-right text-slate-700">{q.revenueHT.toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
                       <td className="py-3 px-3 text-right text-emerald-600 font-medium">{q.vatCollected.toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>
                       <td className="py-3 px-3 text-right text-sky-600 font-medium">-{q.vatDeductible.toLocaleString(locale, { minimumFractionDigits: 2 })} €</td>

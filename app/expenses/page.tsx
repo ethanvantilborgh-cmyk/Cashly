@@ -7,19 +7,19 @@ import { useLang } from "../context/LangContext";
 
 type Expense = { id: number; label: string; amount: number; category: string; date: string; note: string; };
 
-const CATEGORIES_FR = ["Logiciels", "Transport", "Infrastructure", "Marketing", "Fournitures", "Formation", "Repas", "Autre"];
-const CATEGORIES_EN = ["Software", "Transport", "Infrastructure", "Marketing", "Supplies", "Training", "Meals", "Other"];
-const CATEGORIES_NL = ["Software", "Transport", "Infrastructuur", "Marketing", "Benodigdheden", "Opleiding", "Maaltijden", "Overig"];
+// Language-agnostic category codes stored in localStorage
+const CATEGORY_CODES = ["software", "transport", "infrastructure", "marketing", "supplies", "training", "meals", "other"] as const;
+type CategoryCode = typeof CATEGORY_CODES[number];
 
 const CAT_COLORS: Record<string, string> = {
-  Logiciels: "bg-violet-50 text-violet-700", Software: "bg-violet-50 text-violet-700",
-  Transport: "bg-sky-50 text-sky-700",
-  Infrastructure: "bg-slate-100 text-slate-700", Infrastructuur: "bg-slate-100 text-slate-700",
-  Marketing: "bg-orange-50 text-orange-700",
-  Fournitures: "bg-amber-50 text-amber-700", Supplies: "bg-amber-50 text-amber-700", Benodigdheden: "bg-amber-50 text-amber-700",
-  Formation: "bg-emerald-50 text-emerald-700", Training: "bg-emerald-50 text-emerald-700", Opleiding: "bg-emerald-50 text-emerald-700",
-  Repas: "bg-rose-50 text-rose-700", Meals: "bg-rose-50 text-rose-700", Maaltijden: "bg-rose-50 text-rose-700",
-  Autre: "bg-gray-100 text-gray-700", Other: "bg-gray-100 text-gray-700", Overig: "bg-gray-100 text-gray-700",
+  software:       "bg-violet-50 text-violet-700",
+  transport:      "bg-sky-50 text-sky-700",
+  infrastructure: "bg-slate-100 text-slate-700",
+  marketing:      "bg-orange-50 text-orange-700",
+  supplies:       "bg-amber-50 text-amber-700",
+  training:       "bg-emerald-50 text-emerald-700",
+  meals:          "bg-rose-50 text-rose-700",
+  other:          "bg-gray-100 text-gray-700",
 };
 
 const EMPTY_FORM = { label: "", amount: "", category: "", date: "", note: "" };
@@ -36,20 +36,29 @@ export default function ExpensesPage() {
   const [form, setForm]           = useState(EMPTY_FORM);
   const [toast, setToast]         = useState("");
 
-  const CATEGORIES = lang === "nl" ? CATEGORIES_NL : lang === "en" ? CATEGORIES_EN : CATEGORIES_FR;
+  // Translated labels for codes — must be inside component (uses tr)
+  const CATEGORY_LABELS: Record<string, string> = {
+    software:       tr("catSoftware"),
+    transport:      tr("catTransport"),
+    infrastructure: tr("catInfrastructure"),
+    marketing:      tr("catMarketing"),
+    supplies:       tr("catSupplies"),
+    training:       tr("catTraining"),
+    meals:          tr("catMeals"),
+    other:          tr("catOther"),
+  };
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000); }
 
   function openCreate() {
     setEditId(null);
-    setForm({ ...EMPTY_FORM, category: CATEGORIES[0] });
+    setForm({ ...EMPTY_FORM, category: CATEGORY_CODES[0] });
     setShowModal(true);
   }
 
   function openEdit(exp: Expense) {
     setEditId(exp.id);
-    // Normalize category: if saved category doesn't exist in current language list, keep it as-is (it will still save correctly)
-    const normalizedCategory = CATEGORIES.includes(exp.category) ? exp.category : CATEGORIES[0];
+    const normalizedCategory = (CATEGORY_CODES as readonly string[]).includes(exp.category) ? exp.category : CATEGORY_CODES[0];
     setForm({ label: exp.label, amount: exp.amount.toString(), category: normalizedCategory, date: exp.date, note: exp.note });
     setShowModal(true);
   }
@@ -66,12 +75,12 @@ export default function ExpensesPage() {
     let updated: Expense[];
     if (editId !== null) {
       updated = expenses.map(e => e.id === editId
-        ? { ...e, label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORIES[0], date: form.date, note: form.note }
+        ? { ...e, label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORY_CODES[0], date: form.date, note: form.note }
         : e
       );
       showToast("✓ " + tr("saveChanges"));
     } else {
-      updated = [{ id: Date.now(), label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORIES[0], date: form.date, note: form.note }, ...expenses];
+      updated = [{ id: Date.now(), label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORY_CODES[0], date: form.date, note: form.note }, ...expenses];
       showToast(tr("expenseAdded"));
     }
     setExpenses(updated); saveExpenses(updated);
@@ -124,10 +133,10 @@ export default function ExpensesPage() {
               className={`text-xs font-medium px-3 py-2 rounded-lg transition-colors ${filterCat === "all" ? "gradient-btn text-white" : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"}`}>
               {tr("all")}
             </button>
-            {CATEGORIES.map(cat => (
-              <button key={cat} onClick={() => setFilterCat(cat)}
-                className={`text-xs font-medium px-3 py-2 rounded-lg transition-colors ${filterCat === cat ? "gradient-btn text-white" : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"}`}>
-                {cat}
+            {CATEGORY_CODES.map(code => (
+              <button key={code} onClick={() => setFilterCat(code)}
+                className={`text-xs font-medium px-3 py-2 rounded-lg transition-colors ${filterCat === code ? "gradient-btn text-white" : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"}`}>
+                {CATEGORY_LABELS[code]}
               </button>
             ))}
           </div>
@@ -147,7 +156,9 @@ export default function ExpensesPage() {
                   <p className="text-xs text-slate-400 mt-0.5">{exp.date}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`badge ${CAT_COLORS[exp.category] || "bg-gray-100 text-gray-700"}`}>{exp.category}</span>
+                  <span className={`badge ${CAT_COLORS[exp.category] || "bg-gray-100 text-gray-700"}`}>
+                    {CATEGORY_LABELS[exp.category] || exp.category}
+                  </span>
                   <span className="text-sm font-semibold text-red-500 min-w-20 text-right">-{exp.amount.toFixed(2)} €</span>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(exp)} className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
@@ -188,9 +199,11 @@ export default function ExpensesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("category")}</label>
-                <select value={form.category || CATEGORIES[0]} onChange={e => setForm({...form, category: e.target.value})}
+                <select value={form.category || CATEGORY_CODES[0]} onChange={e => setForm({...form, category: e.target.value})}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
-                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                  {CATEGORY_CODES.map(code => (
+                    <option key={code} value={code}>{CATEGORY_LABELS[code]}</option>
+                  ))}
                 </select>
               </div>
               <div>
