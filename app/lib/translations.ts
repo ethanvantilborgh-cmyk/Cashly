@@ -350,6 +350,14 @@ export const t = {
     // App misc
     invoiceNotesPlaceholder: "Merci pour votre confiance. Paiement par virement bancaire.",
     exampleQuoteDescription: "Développement site web, design logo...",
+
+    // Auth placeholders
+    exampleEmail: "vous@exemple.com",
+    showPassword: "Afficher le mot de passe",
+    exampleFirstName: "Alex",
+    exampleLastName: "Dupont",
+    exampleCompanyType: "Freelance, SARL, SAS...",
+    passwordMinChars: "8 caractères minimum",
   },
 
   en: {
@@ -674,6 +682,14 @@ export const t = {
     // App misc
     invoiceNotesPlaceholder: "Thank you for your business. Payment by bank transfer.",
     exampleQuoteDescription: "Website development, logo design...",
+
+    // Auth placeholders
+    exampleEmail: "you@example.com",
+    showPassword: "Show password",
+    exampleFirstName: "Alex",
+    exampleLastName: "Smith",
+    exampleCompanyType: "Freelance, Ltd, LLC...",
+    passwordMinChars: "8 characters minimum",
   },
 
   nl: {
@@ -998,6 +1014,14 @@ export const t = {
     // App misc
     invoiceNotesPlaceholder: "Bedankt voor uw vertrouwen. Betaling per overschrijving.",
     exampleQuoteDescription: "Websiteontwikkeling, logo ontwerp...",
+
+    // Auth placeholders
+    exampleEmail: "u@voorbeeld.nl",
+    showPassword: "Wachtwoord tonen",
+    exampleFirstName: "Alex",
+    exampleLastName: "Jansen",
+    exampleCompanyType: "Freelance, BV, NV...",
+    passwordMinChars: "Minimaal 8 tekens",
   },
 };
 
