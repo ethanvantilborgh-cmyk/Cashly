@@ -113,7 +113,7 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("invoiceNotes")}</label>
                 <textarea
                   value={form.invoiceNotes}
-                  placeholder="Merci pour votre confiance. Paiement par virement bancaire."
+                  placeholder={tr("invoiceNotesPlaceholder")}
                   rows={3}
                   onChange={e => setForm({ ...form, invoiceNotes: e.target.value })}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all resize-none"

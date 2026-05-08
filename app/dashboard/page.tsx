@@ -74,7 +74,7 @@ function DashboardContent() {
             { label: tr("revenue"),       value: fmt(stats.revenue),    sub: `${stats.recentInvoices.filter(i=>i.status==="paid").length} ${tr("paidInvoicesLabel")}`, up: true,  icon: TrendingUp,   color: "text-emerald-600", bg: "bg-emerald-50" },
             { label: tr("expensesLabel"), value: fmt(stats.totalExp),   sub: `${stats.recentExpenses.length} ${tr("expensesCountLabel")}`,  up: false, icon: TrendingDown, color: "text-red-500",     bg: "bg-red-50" },
             { label: tr("netProfit"),     value: fmt(stats.netProfit),  sub: stats.netProfit >= 0 ? tr("profit") : tr("deficit"), up: stats.netProfit >= 0, icon: TrendingUp, color: stats.netProfit >= 0 ? "text-sky-600" : "text-red-500", bg: stats.netProfit >= 0 ? "bg-sky-50" : "bg-red-50" },
-            { label: tr("unpaid"),        value: fmt(stats.unpaidAmt),  sub: `${stats.unpaidCount} factures`, up: false, icon: AlertCircle,  color: "text-amber-600",   bg: "bg-amber-50" },
+            { label: tr("unpaid"),        value: fmt(stats.unpaidAmt),  sub: `${stats.unpaidCount} ${tr("invoices").toLowerCase()}`, up: false, icon: AlertCircle,  color: "text-amber-600",   bg: "bg-amber-50" },
           ].map(({ label, value, sub, up, icon: Icon, color, bg }) => (
             <div key={label} className="card p-5">
               <div className="flex items-start justify-between mb-3">

@@ -219,7 +219,7 @@ export default function InvoicesPage() {
           </div>
           <div className="flex items-center gap-2">
             <button onClick={exportCSV} className="flex items-center gap-2 border border-slate-200 text-sm font-semibold px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-              <FileDown className="w-4 h-4" /> Export CSV
+              <FileDown className="w-4 h-4" /> {tr("exportCsv")}
             </button>
             <button onClick={handleNewInvoice} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
               <Plus className="w-4 h-4" /> {tr("newInvoice")}
@@ -429,7 +429,7 @@ export default function InvoicesPage() {
                   {lines.map(line => (
                     <div key={line.id} className="grid grid-cols-12 gap-1 items-center">
                       <input value={line.description} onChange={e => updateLine(line.id, "description", e.target.value)}
-                        placeholder="Description..." required
+                        placeholder={tr("description") + "..."} required
                         className="col-span-5 border border-slate-200 rounded-lg px-2.5 py-2 text-sm outline-none focus:border-emerald-400" />
                       <input type="number" min="0.01" step="0.01" value={line.qty || ""} onChange={e => updateLine(line.id, "qty", e.target.value)}
                         className="col-span-2 border border-slate-200 rounded-lg px-2 py-2 text-sm outline-none focus:border-emerald-400 text-center" />

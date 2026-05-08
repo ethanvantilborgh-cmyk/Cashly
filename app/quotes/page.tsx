@@ -331,7 +331,7 @@ export default function QuotesPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("quoteDescription")}</label>
                 <textarea value={form.description} rows={2} onChange={e => setForm({ ...form, description: e.target.value })}
-                  placeholder="Développement site web, design logo..."
+                  placeholder={tr("exampleQuoteDescription")}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 resize-none" />
               </div>
               <div className="grid grid-cols-2 gap-3">

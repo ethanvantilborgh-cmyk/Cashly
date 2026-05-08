@@ -280,6 +280,76 @@ export const t = {
 
     // CSV / data
     monthLabel: "Mois",
+
+    // Landing page - Nav
+    navFeatures: "Fonctionnalités",
+    navPricing: "Tarifs",
+    navLogin: "Connexion",
+    freeTrialShort: "Essai gratuit",
+
+    // Landing page - Social proof
+    reviewsNote: "sur 200+ avis",
+    usedInCountries: "🇫🇷 🇧🇪 🇳🇱 Utilisé dans 3 pays",
+    vatCompliance: "✓ Conforme TVA belge & française",
+    vsLastMonth: "vs mois dernier",
+
+    // Landing page - Demo
+    revenueThisMonth: "Revenus ce mois",
+
+    // Landing page - Features
+    featuresTitle: "Tout ce qu'il vous faut",
+    featuresSub: "pour gérer vos finances sans stress",
+    feat1Title: "Facturation complète",
+    feat1Desc: "Créez, envoyez et suivez vos factures professionnelles. Rappels automatiques pour les impayés.",
+    feat2Title: "Suivi des dépenses",
+    feat2Desc: "Enregistrez et catégorisez toutes vos dépenses. TVA, notes de frais, abonnements.",
+    feat3Title: "Rapports financiers",
+    feat3Desc: "Tableaux de bord visuels, bilan mensuel, projection annuelle et export comptable.",
+    feat4Title: "FR · EN · NL",
+    feat4Desc: "Interface et documents en français, anglais ou néerlandais selon vos clients.",
+    feat5Title: "Données sécurisées",
+    feat5Desc: "Vos données financières sont chiffrées et sauvegardées automatiquement.",
+    feat6Title: "Rapide & simple",
+    feat6Desc: "Pas de formation nécessaire. Opérationnel en 5 minutes.",
+
+    // Landing page - Testimonials
+    testimonialsTitle: "Ils utilisent Cashly chaque jour",
+    t1Name: "Sophie L.",
+    t1Role: "Graphiste freelance · Paris",
+    t1Text: "Enfin une solution simple ! Je crée mes factures en 2 minutes et mes clients reçoivent des PDFs professionnels.",
+    t2Name: "Thomas V.",
+    t2Role: "Consultant IT · Bruxelles",
+    t2Text: "Le support FR/EN/NL est parfait pour mes clients belges. Les rapports mensuels me sauvent chaque trimestre.",
+    t3Name: "Marie D.",
+    t3Role: "Photographe · Amsterdam",
+    t3Text: "J'ai enfin une vue claire sur mes finances. L'interface est belle et vraiment facile à utiliser.",
+
+    // Landing page - Pricing
+    pricingTitle: "Tarifs transparents",
+    pricingSub: "Sans surprise, sans engagement",
+    starterPlanDesc: "Pour tester Cashly",
+    starterF1: "5 factures/mois",
+    starterF2: "Suivi des dépenses",
+    starterF3: "1 rapport mensuel",
+    starterF4: "Export PDF",
+    recommended: "Recommandé",
+    proPlanDesc: "Pour les pros sérieux",
+    proF1: "Factures illimitées",
+    proF2: "Dépenses illimitées",
+    proF3: "Rapports avancés",
+    proF4: "Export comptable (CSV/PDF)",
+    proF5: "Multi-devises (€, $, £)",
+    proF6: "Support prioritaire",
+    startProButton: "Commencer Pro — 19€/mois",
+
+    // Landing page - CTA + Footer
+    ctaTitle: "Prêt à simplifier votre comptabilité ?",
+    ctaDesc: "14 jours d'essai gratuit. Aucune carte bancaire requise.",
+    copyright: "© 2025 Cashly. Tous droits réservés.",
+
+    // App misc
+    invoiceNotesPlaceholder: "Merci pour votre confiance. Paiement par virement bancaire.",
+    exampleQuoteDescription: "Développement site web, design logo...",
   },
 
   en: {
@@ -534,6 +604,76 @@ export const t = {
     exampleServiceDescription: "Front/back development",
 
     monthLabel: "Month",
+
+    // Landing page - Nav
+    navFeatures: "Features",
+    navPricing: "Pricing",
+    navLogin: "Sign in",
+    freeTrialShort: "Free trial",
+
+    // Landing page - Social proof
+    reviewsNote: "over 200+ reviews",
+    usedInCountries: "🇫🇷 🇧🇪 🇳🇱 Used in 3 countries",
+    vatCompliance: "✓ Belgian & French VAT compliant",
+    vsLastMonth: "vs last month",
+
+    // Landing page - Demo
+    revenueThisMonth: "Revenue this month",
+
+    // Landing page - Features
+    featuresTitle: "Everything you need",
+    featuresSub: "to manage your finances stress-free",
+    feat1Title: "Full invoicing",
+    feat1Desc: "Create, send and track your professional invoices. Automatic reminders for unpaid invoices.",
+    feat2Title: "Expense tracking",
+    feat2Desc: "Record and categorize all your expenses. VAT, expense reports, subscriptions.",
+    feat3Title: "Financial reports",
+    feat3Desc: "Visual dashboards, monthly balance, annual projection and accounting export.",
+    feat4Title: "FR · EN · NL",
+    feat4Desc: "Interface and documents in French, English or Dutch depending on your clients.",
+    feat5Title: "Secure data",
+    feat5Desc: "Your financial data is encrypted and automatically backed up.",
+    feat6Title: "Fast & simple",
+    feat6Desc: "No training needed. Up and running in 5 minutes.",
+
+    // Landing page - Testimonials
+    testimonialsTitle: "They use Cashly every day",
+    t1Name: "Sophie L.",
+    t1Role: "Freelance graphic designer · Paris",
+    t1Text: "Finally a simple solution! I create my invoices in 2 minutes and my clients receive professional PDFs.",
+    t2Name: "Thomas V.",
+    t2Role: "IT Consultant · Brussels",
+    t2Text: "FR/EN/NL support is perfect for my Belgian clients. Monthly reports save me every quarter.",
+    t3Name: "Marie D.",
+    t3Role: "Photographer · Amsterdam",
+    t3Text: "I finally have a clear view of my finances. The interface is beautiful and really easy to use.",
+
+    // Landing page - Pricing
+    pricingTitle: "Transparent pricing",
+    pricingSub: "No surprises, no commitment",
+    starterPlanDesc: "To try Cashly",
+    starterF1: "5 invoices/month",
+    starterF2: "Expense tracking",
+    starterF3: "1 monthly report",
+    starterF4: "PDF export",
+    recommended: "Recommended",
+    proPlanDesc: "For serious pros",
+    proF1: "Unlimited invoices",
+    proF2: "Unlimited expenses",
+    proF3: "Advanced reports",
+    proF4: "Accounting export (CSV/PDF)",
+    proF5: "Multi-currency (€, $, £)",
+    proF6: "Priority support",
+    startProButton: "Start Pro — €19/month",
+
+    // Landing page - CTA + Footer
+    ctaTitle: "Ready to simplify your bookkeeping?",
+    ctaDesc: "14-day free trial. No credit card required.",
+    copyright: "© 2025 Cashly. All rights reserved.",
+
+    // App misc
+    invoiceNotesPlaceholder: "Thank you for your business. Payment by bank transfer.",
+    exampleQuoteDescription: "Website development, logo design...",
   },
 
   nl: {
@@ -788,6 +928,76 @@ export const t = {
     exampleServiceDescription: "Front/back ontwikkeling",
 
     monthLabel: "Maand",
+
+    // Landing page - Nav
+    navFeatures: "Functionaliteiten",
+    navPricing: "Tarieven",
+    navLogin: "Aanmelden",
+    freeTrialShort: "Gratis proberen",
+
+    // Landing page - Social proof
+    reviewsNote: "op 200+ beoordelingen",
+    usedInCountries: "🇫🇷 🇧🇪 🇳🇱 Gebruikt in 3 landen",
+    vatCompliance: "✓ Belgische & Franse BTW-conform",
+    vsLastMonth: "vs vorige maand",
+
+    // Landing page - Demo
+    revenueThisMonth: "Omzet deze maand",
+
+    // Landing page - Features
+    featuresTitle: "Alles wat u nodig heeft",
+    featuresSub: "om uw financiën stressvrij te beheren",
+    feat1Title: "Volledige facturatie",
+    feat1Desc: "Maak, verstuur en volg uw professionele facturen. Automatische herinneringen voor onbetaalde facturen.",
+    feat2Title: "Uitgavenbeheer",
+    feat2Desc: "Registreer en categoriseer al uw uitgaven. BTW, onkostennota's, abonnementen.",
+    feat3Title: "Financiële rapporten",
+    feat3Desc: "Visuele dashboards, maandelijks overzicht, jaarlijkse projectie en boekhoudexport.",
+    feat4Title: "FR · EN · NL",
+    feat4Desc: "Interface en documenten in het Frans, Engels of Nederlands afhankelijk van uw klanten.",
+    feat5Title: "Beveiligde gegevens",
+    feat5Desc: "Uw financiële gegevens zijn versleuteld en automatisch opgeslagen.",
+    feat6Title: "Snel & eenvoudig",
+    feat6Desc: "Geen opleiding nodig. Operationeel in 5 minuten.",
+
+    // Landing page - Testimonials
+    testimonialsTitle: "Zij gebruiken Cashly elke dag",
+    t1Name: "Sophie L.",
+    t1Role: "Freelance grafisch ontwerper · Parijs",
+    t1Text: "Eindelijk een eenvoudige oplossing! Ik maak mijn facturen in 2 minuten en mijn klanten ontvangen professionele PDF's.",
+    t2Name: "Thomas V.",
+    t2Role: "IT Consultant · Brussel",
+    t2Text: "FR/EN/NL ondersteuning is perfect voor mijn Belgische klanten. Maandelijkse rapporten redden me elk kwartaal.",
+    t3Name: "Marie D.",
+    t3Role: "Fotograaf · Amsterdam",
+    t3Text: "Ik heb eindelijk een duidelijk beeld van mijn financiën. De interface is mooi en echt gemakkelijk te gebruiken.",
+
+    // Landing page - Pricing
+    pricingTitle: "Transparante tarieven",
+    pricingSub: "Geen verrassingen, geen verbintenis",
+    starterPlanDesc: "Om Cashly te proberen",
+    starterF1: "5 facturen/maand",
+    starterF2: "Uitgavenbeheer",
+    starterF3: "1 maandelijks rapport",
+    starterF4: "PDF export",
+    recommended: "Aanbevolen",
+    proPlanDesc: "Voor serieuze professionals",
+    proF1: "Onbeperkte facturen",
+    proF2: "Onbeperkte uitgaven",
+    proF3: "Geavanceerde rapporten",
+    proF4: "Boekhoudexport (CSV/PDF)",
+    proF5: "Multi-valuta (€, $, £)",
+    proF6: "Prioritaire ondersteuning",
+    startProButton: "Pro starten — €19/maand",
+
+    // Landing page - CTA + Footer
+    ctaTitle: "Klaar om uw boekhouding te vereenvoudigen?",
+    ctaDesc: "14 dagen gratis proberen. Geen creditcard vereist.",
+    copyright: "© 2025 Cashly. Alle rechten voorbehouden.",
+
+    // App misc
+    invoiceNotesPlaceholder: "Bedankt voor uw vertrouwen. Betaling per overschrijving.",
+    exampleQuoteDescription: "Websiteontwikkeling, logo ontwerp...",
   },
 };
 

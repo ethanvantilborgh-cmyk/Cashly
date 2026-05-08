@@ -2,8 +2,17 @@
 import Link from "next/link";
 import { TrendingUp, FileText, PieChart, Shield, Zap, Globe, Check, ArrowRight, Star } from "lucide-react";
 import UpgradeButton from "./components/UpgradeButton";
+import { useLang } from "./context/LangContext";
 
 export default function Home() {
+  const { tr } = useLang();
+
+  const STATUS_MAP: Record<string, string> = {
+    paid: "status-paid",
+    pending: "status-pending",
+    overdue: "status-overdue",
+  };
+
   return (
     <div className="min-h-screen bg-white text-slate-900">
       {/* Nav */}
@@ -16,15 +25,15 @@ export default function Home() {
             <span className="font-bold text-lg gradient-text">Cashly</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-slate-500">
-            <a href="#features" className="hover:text-slate-900 transition-colors">Fonctionnalités</a>
-            <a href="#pricing" className="hover:text-slate-900 transition-colors">Tarifs</a>
+            <a href="#features" className="hover:text-slate-900 transition-colors">{tr("navFeatures")}</a>
+            <a href="#pricing" className="hover:text-slate-900 transition-colors">{tr("navPricing")}</a>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/auth/login" className="text-sm text-slate-600 hover:text-slate-900 transition-colors px-4 py-2">
-              Connexion
+              {tr("navLogin")}
             </Link>
             <Link href="/auth/signup" className="gradient-btn text-sm font-semibold px-4 py-2 rounded-lg text-white">
-              Essai gratuit
+              {tr("freeTrialShort")}
             </Link>
           </div>
         </div>
@@ -35,24 +44,24 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-1.5 rounded-full text-sm text-emerald-700 font-medium mb-8">
             <Zap className="w-3.5 h-3.5" />
-            Comptabilité simple pour freelances & PME
+            {tr("heroTag")}
           </div>
           <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6 text-slate-900">
-            Fini la comptabilité{" "}
-            <span className="gradient-text">compliquée</span>
+            {tr("heroTitle1")}{" "}
+            <span className="gradient-text">{tr("heroTitle2")}</span>
           </h1>
           <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Cashly centralise vos factures, dépenses et rapports financiers. En français et en anglais. Conçu pour les indépendants et petites entreprises.
+            {tr("heroSub")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/signup" className="gradient-btn font-semibold px-8 py-4 rounded-xl text-white text-lg inline-flex items-center gap-2 justify-center shadow-lg shadow-emerald-200">
-              Commencer gratuitement <ArrowRight className="w-5 h-5" />
+              {tr("startFree")} <ArrowRight className="w-5 h-5" />
             </Link>
             <Link href="/dashboard" className="bg-white border border-slate-200 font-semibold px-8 py-4 rounded-xl text-slate-700 text-lg hover:border-slate-300 transition-colors">
-              Voir la démo
+              {tr("seeDemo")}
             </Link>
           </div>
-          <p className="text-sm text-slate-400 mt-4">Gratuit 14 jours · Sans carte bancaire</p>
+          <p className="text-sm text-slate-400 mt-4">{tr("freePlanNote")}</p>
 
           {/* Social proof */}
           <div className="flex flex-wrap items-center justify-center gap-6 mt-10">
@@ -60,12 +69,12 @@ export default function Home() {
               <div className="flex">
                 {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
               </div>
-              <span className="font-medium text-slate-700">4.9/5</span> sur 200+ avis
+              <span className="font-medium text-slate-700">4.9/5</span> {tr("reviewsNote")}
             </div>
             <div className="w-px h-4 bg-slate-200 hidden sm:block" />
-            <span className="text-sm text-slate-500">🇫🇷 🇧🇪 🇳🇱 Utilisé dans 3 pays</span>
+            <span className="text-sm text-slate-500">{tr("usedInCountries")}</span>
             <div className="w-px h-4 bg-slate-200 hidden sm:block" />
-            <span className="text-sm text-slate-500">✓ Conforme TVA belge & française</span>
+            <span className="text-sm text-slate-500">{tr("vatCompliance")}</span>
           </div>
         </div>
 
@@ -79,29 +88,29 @@ export default function Home() {
           </div>
           <div className="p-6 bg-slate-50 grid grid-cols-3 gap-4">
             {[
-              { label: "Revenus ce mois", value: "12 450 €", change: "+18%", color: "text-emerald-600" },
-              { label: "Dépenses", value: "3 280 €", change: "+5%", color: "text-red-500" },
-              { label: "Bénéfice net", value: "9 170 €", change: "+24%", color: "text-sky-600" },
+              { label: tr("revenueThisMonth"), value: "12 450 €", change: "+18%", color: "text-emerald-600" },
+              { label: tr("expensesLabel"),    value: "3 280 €",  change: "+5%",  color: "text-red-500" },
+              { label: tr("netProfit"),        value: "9 170 €",  change: "+24%", color: "text-sky-600" },
             ].map(({ label, value, change, color }) => (
               <div key={label} className="card p-4">
                 <p className="text-xs text-slate-400 mb-1">{label}</p>
                 <p className={`text-xl font-bold ${color}`}>{value}</p>
-                <p className="text-xs text-emerald-600 font-medium mt-1">{change} vs mois dernier</p>
+                <p className="text-xs text-emerald-600 font-medium mt-1">{change} {tr("vsLastMonth")}</p>
               </div>
             ))}
           </div>
           <div className="p-6 border-t border-slate-100">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Dernières factures</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{tr("recentInvoices")}</p>
             <div className="space-y-2">
               {[
-                { client: "Acme Corp", amount: "2 400 €", status: "Payée" },
-                { client: "StartupXYZ", amount: "1 800 €", status: "En attente" },
-                { client: "Design Studio", amount: "950 €", status: "En retard" },
+                { client: "Acme Corp",     amount: "2 400 €", status: "paid" },
+                { client: "StartupXYZ",    amount: "1 800 €", status: "pending" },
+                { client: "Design Studio", amount: "950 €",   status: "overdue" },
               ].map(({ client, amount, status }) => (
                 <div key={client} className="flex items-center justify-between py-2 border-b border-slate-50">
                   <span className="text-sm font-medium text-slate-700">{client}</span>
                   <span className="text-sm font-semibold text-slate-900">{amount}</span>
-                  <span className={`badge ${status === "Payée" ? "status-paid" : status === "En attente" ? "status-pending" : "status-overdue"}`}>{status}</span>
+                  <span className={`badge ${STATUS_MAP[status]}`}>{tr(status as "paid" | "pending" | "overdue")}</span>
                 </div>
               ))}
             </div>
@@ -112,16 +121,16 @@ export default function Home() {
       {/* Features */}
       <section id="features" className="py-24 px-6 bg-white">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">Tout ce qu&apos;il vous faut</h2>
-          <p className="text-slate-500 text-center mb-16 text-lg">pour gérer vos finances sans stress</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">{tr("featuresTitle")}</h2>
+          <p className="text-slate-500 text-center mb-16 text-lg">{tr("featuresSub")}</p>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: FileText, title: "Facturation complète", desc: "Créez, envoyez et suivez vos factures professionnelles. Rappels automatiques pour les impayés.", color: "bg-emerald-50 text-emerald-600" },
-              { icon: PieChart, title: "Suivi des dépenses", desc: "Enregistrez et catégorisez toutes vos dépenses. TVA, notes de frais, abonnements.", color: "bg-sky-50 text-sky-600" },
-              { icon: TrendingUp, title: "Rapports financiers", desc: "Tableaux de bord visuels, bilan mensuel, projection annuelle et export comptable.", color: "bg-violet-50 text-violet-600" },
-              { icon: Globe, title: "FR · EN · NL", desc: "Interface et documents en français, anglais ou néerlandais selon vos clients.", color: "bg-amber-50 text-amber-600" },
-              { icon: Shield, title: "Données sécurisées", desc: "Vos données financières sont chiffrées et sauvegardées automatiquement.", color: "bg-rose-50 text-rose-600" },
-              { icon: Zap, title: "Rapide & simple", desc: "Pas de formation nécessaire. Opérationnel en 5 minutes.", color: "bg-emerald-50 text-emerald-600" },
+              { icon: FileText, title: tr("feat1Title"), desc: tr("feat1Desc"), color: "bg-emerald-50 text-emerald-600" },
+              { icon: PieChart, title: tr("feat2Title"), desc: tr("feat2Desc"), color: "bg-sky-50 text-sky-600" },
+              { icon: TrendingUp, title: tr("feat3Title"), desc: tr("feat3Desc"), color: "bg-violet-50 text-violet-600" },
+              { icon: Globe, title: tr("feat4Title"), desc: tr("feat4Desc"), color: "bg-amber-50 text-amber-600" },
+              { icon: Shield, title: tr("feat5Title"), desc: tr("feat5Desc"), color: "bg-rose-50 text-rose-600" },
+              { icon: Zap, title: tr("feat6Title"), desc: tr("feat6Desc"), color: "bg-emerald-50 text-emerald-600" },
             ].map(({ icon: Icon, title, desc, color }) => (
               <div key={title} className="card card-hover p-6">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${color}`}>
@@ -138,12 +147,12 @@ export default function Home() {
       {/* Testimonials */}
       <section className="py-20 px-6 bg-slate-50">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Ils utilisent Cashly chaque jour</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">{tr("testimonialsTitle")}</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { name: "Sophie L.", role: "Graphiste freelance · Paris", text: "Enfin une solution simple ! Je crée mes factures en 2 minutes et mes clients reçoivent des PDFs professionnels.", stars: 5 },
-              { name: "Thomas V.", role: "Consultant IT · Bruxelles", text: "Le support FR/EN/NL est parfait pour mes clients belges. Les rapports mensuels me sauvent chaque trimestre.", stars: 5 },
-              { name: "Marie D.", role: "Photographe · Amsterdam", text: "J'ai enfin une vue claire sur mes finances. L'interface est belle et vraiment facile à utiliser.", stars: 5 },
+              { name: tr("t1Name"), role: tr("t1Role"), text: tr("t1Text"), stars: 5 },
+              { name: tr("t2Name"), role: tr("t2Role"), text: tr("t2Text"), stars: 5 },
+              { name: tr("t3Name"), role: tr("t3Role"), text: tr("t3Text"), stars: 5 },
             ].map(({ name, role, text, stars }) => (
               <div key={name} className="card p-6">
                 <div className="flex mb-3">
@@ -165,39 +174,39 @@ export default function Home() {
       {/* Pricing */}
       <section id="pricing" className="py-24 px-6 bg-white">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">Tarifs transparents</h2>
-          <p className="text-slate-500 text-center mb-16 text-lg">Sans surprise, sans engagement</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">{tr("pricingTitle")}</h2>
+          <p className="text-slate-500 text-center mb-16 text-lg">{tr("pricingSub")}</p>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="card p-8">
               <h3 className="text-xl font-semibold mb-1">Starter</h3>
               <div className="text-4xl font-bold my-4 text-slate-900">0€<span className="text-lg text-slate-400 font-normal">/mois</span></div>
-              <p className="text-slate-400 text-sm mb-6">Pour tester Cashly</p>
+              <p className="text-slate-400 text-sm mb-6">{tr("starterPlanDesc")}</p>
               <ul className="space-y-3 mb-8">
-                {["5 factures/mois", "Suivi des dépenses", "1 rapport mensuel", "Export PDF"].map(f => (
+                {[tr("starterF1"), tr("starterF2"), tr("starterF3"), tr("starterF4")].map(f => (
                   <li key={f} className="flex items-center gap-3 text-sm text-slate-600">
                     <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" /> {f}
                   </li>
                 ))}
               </ul>
               <Link href="/auth/signup" className="block text-center border border-slate-200 font-semibold px-6 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                Commencer gratuitement
+                {tr("startFree")}
               </Link>
             </div>
             <div className="card p-8 border-emerald-200 shadow-lg shadow-emerald-100 relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="gradient-btn text-xs font-semibold px-4 py-1 rounded-full text-white">Recommandé</span>
+                <span className="gradient-btn text-xs font-semibold px-4 py-1 rounded-full text-white">{tr("recommended")}</span>
               </div>
               <h3 className="text-xl font-semibold mb-1">Pro</h3>
               <div className="text-4xl font-bold my-4 text-slate-900">19€<span className="text-lg text-slate-400 font-normal">/mois</span></div>
-              <p className="text-slate-400 text-sm mb-6">Pour les pros sérieux</p>
+              <p className="text-slate-400 text-sm mb-6">{tr("proPlanDesc")}</p>
               <ul className="space-y-3 mb-8">
-                {["Factures illimitées", "Dépenses illimitées", "Rapports avancés", "Export comptable (CSV/PDF)", "Multi-devises (€, $, £)", "Support prioritaire"].map(f => (
+                {[tr("proF1"), tr("proF2"), tr("proF3"), tr("proF4"), tr("proF5"), tr("proF6")].map(f => (
                   <li key={f} className="flex items-center gap-3 text-sm text-slate-600">
                     <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" /> {f}
                   </li>
                 ))}
               </ul>
-              <UpgradeButton label="Commencer Pro — 19€/mois" className="gradient-btn w-full font-semibold px-6 py-3 rounded-xl text-white" />
+              <UpgradeButton label={tr("startProButton")} className="gradient-btn w-full font-semibold px-6 py-3 rounded-xl text-white" />
             </div>
           </div>
         </div>
@@ -207,10 +216,10 @@ export default function Home() {
       <section className="py-24 px-6 bg-white">
         <div className="max-w-2xl mx-auto text-center card p-12 shadow-xl shadow-emerald-100 border-emerald-100">
           <TrendingUp className="w-10 h-10 text-emerald-500 mx-auto mb-4" />
-          <h2 className="text-3xl font-bold mb-4">Prêt à simplifier votre comptabilité ?</h2>
-          <p className="text-slate-500 mb-8">14 jours d&apos;essai gratuit. Aucune carte bancaire requise.</p>
+          <h2 className="text-3xl font-bold mb-4">{tr("ctaTitle")}</h2>
+          <p className="text-slate-500 mb-8">{tr("ctaDesc")}</p>
           <Link href="/auth/signup" className="gradient-btn inline-flex items-center gap-2 font-semibold px-8 py-4 rounded-xl text-white text-lg shadow-lg shadow-emerald-200">
-            Créer mon compte gratuit <ArrowRight className="w-5 h-5" />
+            {tr("createFree")} <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </section>
@@ -224,7 +233,7 @@ export default function Home() {
             </div>
             <span className="font-bold gradient-text">Cashly</span>
           </div>
-          <p className="text-slate-400 text-sm">© 2025 Cashly. Tous droits réservés.</p>
+          <p className="text-slate-400 text-sm">{tr("copyright")}</p>
         </div>
       </footer>
     </div>
