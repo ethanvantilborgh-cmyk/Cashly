@@ -1,5 +1,7 @@
+"use client";
 import Link from "next/link";
-import { TrendingUp, FileText, PieChart, Shield, Zap, Globe, Check, ArrowRight } from "lucide-react";
+import { TrendingUp, FileText, PieChart, Shield, Zap, Globe, Check, ArrowRight, Star } from "lucide-react";
+import UpgradeButton from "./components/UpgradeButton";
 
 export default function Home() {
   return (
@@ -51,6 +53,20 @@ export default function Home() {
             </Link>
           </div>
           <p className="text-sm text-slate-400 mt-4">Gratuit 14 jours · Sans carte bancaire</p>
+
+          {/* Social proof */}
+          <div className="flex flex-wrap items-center justify-center gap-6 mt-10">
+            <div className="flex items-center gap-1.5 text-sm text-slate-500">
+              <div className="flex">
+                {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
+              </div>
+              <span className="font-medium text-slate-700">4.9/5</span> sur 200+ avis
+            </div>
+            <div className="w-px h-4 bg-slate-200 hidden sm:block" />
+            <span className="text-sm text-slate-500">🇫🇷 🇧🇪 🇳🇱 Utilisé dans 3 pays</span>
+            <div className="w-px h-4 bg-slate-200 hidden sm:block" />
+            <span className="text-sm text-slate-500">✓ Conforme TVA belge & française</span>
+          </div>
         </div>
 
         {/* Dashboard preview */}
@@ -103,7 +119,7 @@ export default function Home() {
               { icon: FileText, title: "Facturation complète", desc: "Créez, envoyez et suivez vos factures professionnelles. Rappels automatiques pour les impayés.", color: "bg-emerald-50 text-emerald-600" },
               { icon: PieChart, title: "Suivi des dépenses", desc: "Enregistrez et catégorisez toutes vos dépenses. TVA, notes de frais, abonnements.", color: "bg-sky-50 text-sky-600" },
               { icon: TrendingUp, title: "Rapports financiers", desc: "Tableaux de bord visuels, bilan mensuel, projection annuelle et export comptable.", color: "bg-violet-50 text-violet-600" },
-              { icon: Globe, title: "FR & EN", desc: "Interface et documents en français ou en anglais selon vos clients.", color: "bg-amber-50 text-amber-600" },
+              { icon: Globe, title: "FR · EN · NL", desc: "Interface et documents en français, anglais ou néerlandais selon vos clients.", color: "bg-amber-50 text-amber-600" },
               { icon: Shield, title: "Données sécurisées", desc: "Vos données financières sont chiffrées et sauvegardées automatiquement.", color: "bg-rose-50 text-rose-600" },
               { icon: Zap, title: "Rapide & simple", desc: "Pas de formation nécessaire. Opérationnel en 5 minutes.", color: "bg-emerald-50 text-emerald-600" },
             ].map(({ icon: Icon, title, desc, color }) => (
@@ -119,8 +135,35 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section className="py-20 px-6 bg-slate-50">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">Ils utilisent Cashly chaque jour</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { name: "Sophie L.", role: "Graphiste freelance · Paris", text: "Enfin une solution simple ! Je crée mes factures en 2 minutes et mes clients reçoivent des PDFs professionnels.", stars: 5 },
+              { name: "Thomas V.", role: "Consultant IT · Bruxelles", text: "Le support FR/EN/NL est parfait pour mes clients belges. Les rapports mensuels me sauvent chaque trimestre.", stars: 5 },
+              { name: "Marie D.", role: "Photographe · Amsterdam", text: "J'ai enfin une vue claire sur mes finances. L'interface est belle et vraiment facile à utiliser.", stars: 5 },
+            ].map(({ name, role, text, stars }) => (
+              <div key={name} className="card p-6">
+                <div className="flex mb-3">
+                  {Array.from({ length: stars }).map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <p className="text-slate-600 text-sm leading-relaxed mb-4">&ldquo;{text}&rdquo;</p>
+                <div>
+                  <p className="font-semibold text-slate-900 text-sm">{name}</p>
+                  <p className="text-xs text-slate-400">{role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
-      <section id="pricing" className="py-24 px-6 bg-slate-50">
+      <section id="pricing" className="py-24 px-6 bg-white">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">Tarifs transparents</h2>
           <p className="text-slate-500 text-center mb-16 text-lg">Sans surprise, sans engagement</p>
@@ -154,9 +197,7 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <Link href="/auth/signup" className="gradient-btn block text-center font-semibold px-6 py-3 rounded-xl text-white">
-                Commencer Pro
-              </Link>
+              <UpgradeButton label="Commencer Pro — 19€/mois" className="gradient-btn w-full font-semibold px-6 py-3 rounded-xl text-white" />
             </div>
           </div>
         </div>

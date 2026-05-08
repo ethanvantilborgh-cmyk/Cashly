@@ -3,6 +3,7 @@ import Sidebar from "../components/Sidebar";
 import { useState } from "react";
 import { Plus, Search, FileText, Download, Send, X, Check } from "lucide-react";
 import { useLang } from "../context/LangContext";
+import { printInvoice } from "../lib/printInvoice";
 
 type Invoice = {
   id: string; client: string; email: string; amount: number;
@@ -127,7 +128,7 @@ export default function InvoicesPage() {
                       <button className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors" title={tr("actions")}>
                         <Send className="w-3.5 h-3.5" />
                       </button>
-                      <button className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+                      <button onClick={() => printInvoice(inv)} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors" title="Télécharger PDF">
                         <Download className="w-3.5 h-3.5" />
                       </button>
                     </div>
