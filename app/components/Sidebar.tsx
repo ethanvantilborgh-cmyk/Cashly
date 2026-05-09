@@ -1,12 +1,16 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { TrendingUp, LayoutDashboard, FileText, Receipt, BarChart2, Settings, LogOut, Crown, Users, ClipboardList, Package } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { TrendingUp, LayoutDashboard, FileText, Receipt, BarChart2, Settings, LogOut, Crown, Users, ClipboardList, Package, Moon, Sun } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { Lang } from "../lib/translations";
 import UpgradeButton from "./UpgradeButton";
 import { useState, useEffect } from "react";
-import { isPro, FREE_INVOICE_LIMIT } from "../lib/pro";
+import { isPro as dbIsPro } from "../lib/db";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { FREE_INVOICE_LIMIT } from "../lib/pro";
+import { getInvoices } from "../lib/db";
 
 const LANGS: { value: Lang; flag: string; label: string }[] = [
   { value: "fr", flag: "🇫🇷", label: "FR" },
@@ -16,16 +20,22 @@ const LANGS: { value: Lang; flag: string; label: string }[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router   = useRouter();
   const { lang, setLang, tr } = useLang();
+  const { signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [pro, setPro] = useState(false);
   const [invoiceCount, setInvoiceCount] = useState(0);
+
   useEffect(() => {
-    setPro(isPro());
-    try {
-      const raw = localStorage.getItem("cashly_invoices");
-      setInvoiceCount(raw ? JSON.parse(raw).length : 0);
-    } catch { setInvoiceCount(0); }
+    dbIsPro().then(setPro).catch(() => setPro(false));
+    getInvoices().then(invs => setInvoiceCount(invs.length)).catch(() => setInvoiceCount(0));
   }, []);
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+  }
 
   const NAV = [
     { href: "/dashboard", icon: LayoutDashboard, label: tr("dashboard") },
@@ -38,8 +48,8 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-56 flex-shrink-0 h-screen sticky top-0 bg-white border-r border-slate-100 flex flex-col">
-      <div className="px-4 h-16 flex items-center gap-2 border-b border-slate-100">
+    <aside className="w-56 flex-shrink-0 h-screen sticky top-0 border-r flex flex-col" style={{ background: "var(--sidebar-bg)", borderColor: "var(--card-border)" }}>
+      <div className="px-4 h-16 flex items-center gap-2 border-b" style={{ borderColor: "var(--card-border)" }}>
         <div className="w-7 h-7 gradient-btn rounded-lg flex items-center justify-center">
           <TrendingUp className="w-4 h-4 text-white" />
         </div>
@@ -75,9 +85,13 @@ export default function Sidebar() {
         <Link href="/settings" className="sidebar-link">
           <Settings className="w-4 h-4" /> {tr("settings")}
         </Link>
-        <Link href="/" className="sidebar-link" style={{ color: "#f87171" }}>
+        <button onClick={toggleTheme} className="sidebar-link w-full text-left">
+          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {theme === "dark" ? "Mode clair" : "Mode sombre"}
+        </button>
+        <button onClick={handleSignOut} className="sidebar-link w-full text-left" style={{ color: "#f87171" }}>
           <LogOut className="w-4 h-4" /> {tr("logout")}
-        </Link>
+        </button>
       </div>
 
       <div className="p-4 border-t border-slate-100">

@@ -4,11 +4,16 @@ import { useState, useEffect } from "react";
 import { Plus, Search, FileText, Download, X, Check, Lock, Crown, ChevronDown, CheckCircle2, Link2, Mail, FileDown, RefreshCw, Trash2, Package, Pencil, Copy } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { printInvoice } from "../lib/printInvoice";
-import { isPro, FREE_INVOICE_LIMIT } from "../lib/pro";
+import { isPro as dbIsPro } from "../lib/db";
+import { FREE_INVOICE_LIMIT } from "../lib/pro";
 import UpgradeButton from "../components/UpgradeButton";
-import { getSavedClients, Client } from "../clients/page";
+import type { Client } from "../clients/page";
 import {
-  getInvoices, saveInvoices, getServices,
+  getInvoices, upsertInvoice, deleteInvoice as dbDeleteInvoice,
+  getServices, getClients, getProfile,
+} from "../lib/db";
+import type { CompanySettings } from "../settings/page";
+import {
   Invoice, InvoiceLine, RecurringFreq, Service,
   newLine, lineHT, lineTVA, invoiceTotalHT, invoiceTotalTVA, invoiceTotalTTC,
   generateNextInvoice, nextRecurringDate,
@@ -26,31 +31,68 @@ export default function InvoicesPage() {
   const UNIT_LABELS: Record<string, string> = {
     hour: tr("unitHour"), day: tr("unitDay"), package: tr("unitPackage"), unit: tr("unitUnit"), month: tr("unitMonth"),
   };
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [search, setSearch] = useState("");
+
+  const [invoices, setInvoices]       = useState<Invoice[]>([]);
+  const [search, setSearch]           = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [showModal, setShowModal]     = useState(false);
+  const [editId, setEditId]           = useState<string | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
-  const [client, setClient] = useState({ name: "", email: "" });
-  const [lines, setLines] = useState<InvoiceLine[]>([newLine()]);
-  const [due, setDue] = useState("");
-  const [recurring, setRecurring] = useState<RecurringFreq>("none");
-  const [pro, setPro] = useState(false);
+  const [client, setClient]           = useState({ name: "", email: "" });
+  const [lines, setLines]             = useState<InvoiceLine[]>([newLine()]);
+  const [due, setDue]                 = useState("");
+  const [recurring, setRecurring]     = useState<RecurringFreq>("none");
+  const [pro, setPro]                 = useState(false);
   const [savedClients, setSavedClients] = useState<Client[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices]       = useState<Service[]>([]);
   const [showClientDrop, setShowClientDrop] = useState(false);
-  const [toast, setToast] = useState("");
-  const [payLoading, setPayLoading] = useState<string | null>(null);
+  const [toast, setToast]             = useState("");
+  const [payLoading, setPayLoading]   = useState<string | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [company, setCompany]         = useState<CompanySettings | undefined>(undefined);
 
   useEffect(() => {
-    setPro(isPro()); setSavedClients(getSavedClients());
-    setInvoices(getInvoices()); setServices(getServices());
+    async function load() {
+      const [invs, svcs, cls, pro, profile] = await Promise.all([
+        getInvoices(), getServices(), getClients(), dbIsPro(), getProfile(),
+      ]);
+      setInvoices(invs);
+      setServices(svcs);
+      setSavedClients(cls);
+      setPro(pro);
+      if (profile) setCompany(profile);
+      setLoading(false);
+    }
+    load().catch(() => setLoading(false));
   }, []);
 
-  function persist(updated: Invoice[]) { setInvoices(updated); saveInvoices(updated); }
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000); }
+
+  async function downloadPdf(inv: Invoice) {
+    setPayLoading(inv.id + "_pdf");
+    try {
+      const res = await fetch("/api/pdf-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoice: inv, company: company || {} }),
+      });
+      if (res.headers.get("Content-Type")?.includes("application/pdf")) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `facture-${inv.id}.pdf`; a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        // Fallback: print dialog
+        printInvoice(inv, undefined, company);
+      }
+    } catch {
+      printInvoice(inv, undefined, company);
+    } finally {
+      setPayLoading(null);
+    }
+  }
 
   function nextInvId(list: Invoice[]) {
     const nums = list.map(i => parseInt(i.id.replace(/\D/g, ""), 10)).filter(n => !isNaN(n));
@@ -58,17 +100,22 @@ export default function InvoicesPage() {
     return `INV-${String(max + 1).padStart(3, "0")}`;
   }
 
-  function markAsPaid(id: string) {
-    persist(invoices.map(i => i.id === id ? { ...i, status: "paid" as const } : i));
+  async function markAsPaid(id: string) {
+    const inv = invoices.find(i => i.id === id);
+    if (!inv) return;
+    const updated = { ...inv, status: "paid" as const };
+    await upsertInvoice(updated);
+    setInvoices(prev => prev.map(i => i.id === id ? updated : i));
     showToast("✓ " + tr("invoiceMarkedPaid"));
   }
 
-  function deleteInvoice(id: string) {
-    persist(invoices.filter(i => i.id !== id));
+  async function handleDeleteInvoice(id: string) {
+    await dbDeleteInvoice(id);
+    setInvoices(prev => prev.filter(i => i.id !== id));
     showToast(tr("invoiceDeleted"));
   }
 
-  function duplicateInvoice(inv: Invoice) {
+  async function duplicateInvoice(inv: Invoice) {
     const dup: Invoice = {
       ...inv,
       id: nextInvId(invoices),
@@ -76,7 +123,8 @@ export default function InvoicesPage() {
       date: new Date().toISOString().split("T")[0],
       lines: inv.lines.map(l => ({ ...l, id: Date.now().toString() + Math.random() })),
     };
-    persist([dup, ...invoices]);
+    await upsertInvoice(dup);
+    setInvoices(prev => [dup, ...prev]);
     showToast("✓ " + dup.id + " — " + tr("invoiceDuplicated"));
   }
 
@@ -89,18 +137,49 @@ export default function InvoicesPage() {
     setShowModal(true);
   }
 
-  function sendReminder(inv: Invoice) {
-    const ttc = invoiceTotalTTC(inv.lines).toLocaleString(locale, { minimumFractionDigits: 2 });
-    const subject = encodeURIComponent(tr("reminderEmailSubject").replace("{id}", inv.id).replace("{amount}", ttc));
-    const body = encodeURIComponent(tr("reminderEmailBody").replace("{id}", inv.id).replace("{amount}", ttc).replace("{due}", inv.due));
-    window.open(`mailto:${inv.email}?subject=${subject}&body=${body}`);
+  async function sendReminder(inv: Invoice) {
+    setPayLoading(inv.id + "_email");
+    try {
+      const res = await fetch("/api/send-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoice: inv, company: company || {} }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur envoi");
+      showToast("✉️ " + tr("emailSent"));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur";
+      // Fallback mailto si Resend non configuré
+      if (msg.includes("RESEND_API_KEY")) {
+        const ttc = invoiceTotalTTC(inv.lines).toLocaleString(locale, { minimumFractionDigits: 2 });
+        const subject = encodeURIComponent(tr("reminderEmailSubject").replace("{id}", inv.id).replace("{amount}", ttc));
+        const body    = encodeURIComponent(tr("reminderEmailBody").replace("{id}", inv.id).replace("{amount}", ttc).replace("{due}", inv.due));
+        window.open(`mailto:${inv.email}?subject=${subject}&body=${body}`);
+      } else {
+        showToast("❌ " + msg);
+      }
+    } finally {
+      setPayLoading(null);
+    }
+  }
+
+  async function copyShareLink(inv: Invoice) {
+    const { data: { user } } = await (await import("../lib/supabase")).supabase.auth.getUser();
+    if (!user) return;
+    const res = await fetch("/api/share-invoice", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invoiceId: inv.id, userId: user.id }),
+    });
+    const data = await res.json();
+    if (data.url) { await navigator.clipboard.writeText(data.url); showToast("🔗 " + tr("paymentLinkCopied")); }
   }
 
   async function copyPaymentLink(inv: Invoice) {
     setPayLoading(inv.id);
     try {
       const ttc = invoiceTotalTTC(inv.lines);
-      const res = await fetch("/api/pay", { method: "POST", headers: { "Content-Type": "application/json" },
+      const res  = await fetch("/api/pay", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: ttc, invoiceId: inv.id, clientName: inv.client, vatRate: 0 }),
       });
       const data = await res.json();
@@ -110,27 +189,16 @@ export default function InvoicesPage() {
     setPayLoading(null);
   }
 
-  function doGenerateNext(inv: Invoice) {
+  async function doGenerateNext(inv: Invoice) {
     const next = generateNextInvoice(inv, invoices);
-    persist([next, ...invoices]);
+    await upsertInvoice(next);
+    setInvoices(prev => [next, ...prev]);
     showToast("✓ " + next.id + " " + tr("invoiceGeneratedFor") + " " + next.due);
   }
 
-  function exportCSV() {
-    const rows = [
-      [tr("reference"), tr("client"), tr("email"), tr("amountHT"), tr("vatAmount"), tr("totalTTC"), tr("status"), tr("date"), tr("dueDate"), tr("recurring")],
-      ...invoices.map(i => {
-        const ttc = invoiceTotalTTC(i.lines);
-        const tva = invoiceTotalTVA(i.lines);
-        return [i.id, i.client, i.email, i.amount.toFixed(2), tva.toFixed(2), ttc.toFixed(2), i.status, i.date, i.due, i.recurring];
-      }),
-    ];
-    const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url;
-    a.download = `cashly-${tr("invoices").toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click(); URL.revokeObjectURL(url);
+  async function exportCSV() {
+    const { exportInvoicesToExcel } = await import("../lib/exportExcel");
+    exportInvoicesToExcel(invoices, `cashly-factures-${new Date().toISOString().split("T")[0]}`);
   }
 
   function handleNewInvoice() {
@@ -138,7 +206,6 @@ export default function InvoicesPage() {
     else { setEditId(null); setClient({ name: "", email: "" }); setLines([newLine()]); setDue(""); setRecurring("none"); setShowModal(true); }
   }
 
-  // Line helpers
   function updateLine(id: string, key: keyof InvoiceLine, val: string | number) {
     setLines(ls => ls.map(l => l.id === id ? { ...l, [key]: typeof val === "string" && key !== "description" ? parseFloat(val) || 0 : val } : l));
   }
@@ -148,21 +215,20 @@ export default function InvoicesPage() {
     setShowCatalog(false);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const totalHT = invoiceTotalHT(lines);
     if (editId) {
-      // Update existing invoice
-      const updated = invoices.map(i => i.id === editId ? {
-        ...i,
+      const updated: Invoice = {
+        ...invoices.find(i => i.id === editId)!,
         client: client.name, email: client.email,
         lines, amount: totalHT,
         due, vatRate: lines[0]?.vatRate ?? 21, recurring,
-      } : i);
-      persist(updated);
+      };
+      await upsertInvoice(updated);
+      setInvoices(prev => prev.map(i => i.id === editId ? updated : i));
       showToast("✓ " + tr("saveChanges"));
     } else {
-      // Create new invoice
       const newInv: Invoice = {
         id: nextInvId(invoices),
         client: client.name, email: client.email,
@@ -170,7 +236,8 @@ export default function InvoicesPage() {
         date: new Date().toISOString().split("T")[0],
         due, vatRate: lines[0]?.vatRate ?? 21, recurring,
       };
-      persist([newInv, ...invoices]);
+      await upsertInvoice(newInv);
+      setInvoices(prev => [newInv, ...prev]);
       showToast(tr("invoiceCreated"));
     }
     setShowModal(false);
@@ -202,6 +269,15 @@ export default function InvoicesPage() {
   const totalHT  = invoiceTotalHT(lines);
   const totalTVA = invoiceTotalTVA(lines);
   const totalTTC = invoiceTotalTTC(lines);
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -325,13 +401,14 @@ export default function InvoicesPage() {
                       {inv.email && inv.status !== "paid" && (
                         <button onClick={() => sendReminder(inv)} title={tr("sendReminder")} className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Mail className="w-3.5 h-3.5" /></button>
                       )}
+                      <button onClick={() => copyShareLink(inv)} title="Copier lien public" className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"><FileDown className="w-3.5 h-3.5" /></button>
                       <button onClick={() => copyPaymentLink(inv)} title={tr("copyPaymentLink")} disabled={payLoading === inv.id}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors disabled:opacity-50"><Link2 className="w-3.5 h-3.5" /></button>
                       {inv.recurring !== "none" && (
                         <button onClick={() => doGenerateNext(inv)} title={tr("generateNext")} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><RefreshCw className="w-3.5 h-3.5" /></button>
                       )}
-                      <button onClick={() => printInvoice(inv)} title={tr("pdf")} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => deleteInvoice(inv.id)} title={tr("deleteLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => downloadPdf(inv)} title={tr("pdf")} disabled={payLoading === inv.id + "_pdf"} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"><Download className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => handleDeleteInvoice(inv.id)} title={tr("deleteLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>
                 </tr>
@@ -440,7 +517,7 @@ export default function InvoicesPage() {
                         className="col-span-2 border border-slate-200 rounded-lg px-2 py-2 text-sm outline-none focus:border-emerald-400 text-right" />
                       <select value={line.vatRate} onChange={e => updateLine(line.id, "vatRate", e.target.value)}
                         className="col-span-2 border border-slate-200 rounded-lg px-1 py-2 text-sm outline-none focus:border-emerald-400 bg-white">
-                        <option value={0}>0%</option><option value={6}>6%</option><option value={21}>21%</option>
+                        <option value={0}>{tr("vat0")}</option><option value={6}>{tr("vat6")}</option><option value={21}>{tr("vat21")}</option>
                       </select>
                       <button type="button" onClick={() => removeLine(line.id)} className="col-span-1 p-1.5 text-slate-300 hover:text-red-400 transition-colors flex items-center justify-center">
                         <Trash2 className="w-3.5 h-3.5" />

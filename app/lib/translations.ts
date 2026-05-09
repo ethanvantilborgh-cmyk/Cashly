@@ -245,6 +245,7 @@ export const t = {
 
     // Reports
     vatReportTitle: "Rapport TVA trimestriel",
+    vs: "vs",
     vatCollectedLabel: "TVA collectée",
     vatDeductibleLabel: "TVA déductible",
     vatDueLabel: "TVA à payer",
@@ -268,6 +269,7 @@ export const t = {
 
     // Toasts / Errors
     paymentLinkCopied: "💳 Lien de paiement copié !",
+    emailSent: "Email envoyé avec succès !",
     connectionError: "Erreur de connexion",
     invoiceGeneratedFor: "créée pour le",
     limitReached: "Limite atteinte",
@@ -345,6 +347,8 @@ export const t = {
     // Landing page - CTA + Footer
     ctaTitle: "Prêt à simplifier votre comptabilité ?",
     ctaDesc: "14 jours d'essai gratuit. Aucune carte bancaire requise.",
+    checkYourEmail: "Vérifiez votre email",
+    confirmationSent: "Un lien de confirmation a été envoyé à",
     copyright: "© 2025 Cashly. Tous droits réservés.",
 
     // App misc
@@ -628,6 +632,7 @@ export const t = {
     seeReports: "See reports",
 
     vatReportTitle: "Quarterly VAT report",
+    vs: "vs",
     vatCollectedLabel: "VAT collected",
     vatDeductibleLabel: "Deductible VAT",
     vatDueLabel: "VAT due",
@@ -648,6 +653,7 @@ export const t = {
     pdf: "PDF",
 
     paymentLinkCopied: "💳 Payment link copied!",
+    emailSent: "Email sent successfully!",
     connectionError: "Connection error",
     invoiceGeneratedFor: "created for",
     limitReached: "Limit reached",
@@ -723,6 +729,8 @@ export const t = {
     // Landing page - CTA + Footer
     ctaTitle: "Ready to simplify your bookkeeping?",
     ctaDesc: "14-day free trial. No credit card required.",
+    checkYourEmail: "Check your email",
+    confirmationSent: "A confirmation link has been sent to",
     copyright: "© 2025 Cashly. All rights reserved.",
 
     // App misc
@@ -1006,6 +1014,7 @@ export const t = {
     seeReports: "Rapporten bekijken",
 
     vatReportTitle: "Kwartaal BTW-rapport",
+    vs: "vs",
     vatCollectedLabel: "Geïnde BTW",
     vatDeductibleLabel: "Aftrekbare BTW",
     vatDueLabel: "Te betalen BTW",
@@ -1026,6 +1035,7 @@ export const t = {
     pdf: "PDF",
 
     paymentLinkCopied: "💳 Betalingslink gekopieerd!",
+    emailSent: "E-mail succesvol verzonden!",
     connectionError: "Verbindingsfout",
     invoiceGeneratedFor: "aangemaakt voor",
     limitReached: "Limiet bereikt",
@@ -1101,6 +1111,8 @@ export const t = {
     // Landing page - CTA + Footer
     ctaTitle: "Klaar om uw boekhouding te vereenvoudigen?",
     ctaDesc: "14 dagen gratis proberen. Geen creditcard vereist.",
+    checkYourEmail: "Controleer uw e-mail",
+    confirmationSent: "Een bevestigingslink is verzonden naar",
     copyright: "© 2025 Cashly. Alle rechten voorbehouden.",
 
     // App misc

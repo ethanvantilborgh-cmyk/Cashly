@@ -1,14 +1,17 @@
 "use client";
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
-import { Plus, Search, ClipboardList, X, Check, ChevronDown, ArrowRight, FileText, Download, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, ClipboardList, X, Check, ChevronDown, ArrowRight, Download, Pencil, Trash2 } from "lucide-react";
 import { useLang } from "../context/LangContext";
-import { getQuotes, saveQuotes, getInvoices, saveInvoices, Quote, QuoteStatus } from "../lib/storage";
-import { getSavedClients, Client } from "../clients/page";
-import { getCompanySettings } from "../settings/page";
+import type { Quote, QuoteStatus } from "../lib/storage";
+import type { Client } from "../clients/page";
+import type { CompanySettings } from "../settings/page";
+import {
+  getQuotes, upsertQuote, deleteQuote as dbDeleteQuote,
+  getInvoices, upsertInvoice, getClients, getProfile,
+} from "../lib/db";
 
-function printQuote(q: Quote) {
-  const company = getCompanySettings();
+function printQuote(q: Quote, company: CompanySettings) {
   const vatAmt = q.amount * q.vatRate / 100;
   const ttc = q.amount + vatAmt;
   const STATUS: Record<QuoteStatus, string> = { draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", refused: "Refusé" };
@@ -85,16 +88,27 @@ const EMPTY_FORM = { client: "", email: "", amount: "", due: "", vatRate: "21", 
 export default function QuotesPage() {
   const { lang, tr } = useLang();
   const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [toast, setToast] = useState("");
+  const [quotes, setQuotes]           = useState<Quote[]>([]);
   const [savedClients, setSavedClients] = useState<Client[]>([]);
-  const [showDrop, setShowDrop] = useState(false);
+  const [company, setCompany]         = useState<CompanySettings>({ name:"", address:"", city:"", country:"", vat:"", phone:"", email:"", iban:"", invoicePrefix:"INV", paymentDays:"30", invoiceNotes:"" });
+  const [loading, setLoading]         = useState(true);
+  const [search, setSearch]           = useState("");
+  const [showModal, setShowModal]     = useState(false);
+  const [editId, setEditId]           = useState<string | null>(null);
+  const [form, setForm]               = useState(EMPTY_FORM);
+  const [toast, setToast]             = useState("");
+  const [showDrop, setShowDrop]       = useState(false);
 
-  useEffect(() => { setQuotes(getQuotes()); setSavedClients(getSavedClients()); }, []);
+  useEffect(() => {
+    async function load() {
+      const [qs, cls, prof] = await Promise.all([getQuotes(), getClients(), getProfile()]);
+      setQuotes(qs);
+      setSavedClients(cls);
+      setCompany(prof);
+      setLoading(false);
+    }
+    load().catch(() => setLoading(false));
+  }, []);
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000); }
 
@@ -116,11 +130,13 @@ export default function QuotesPage() {
     return `DEV-${String(max + 1).padStart(3, "0")}`;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (editId) {
-      const updated = quotes.map(q => q.id === editId ? { ...q, client: form.client, email: form.email, amount: parseFloat(form.amount), due: form.due, vatRate: parseFloat(form.vatRate), description: form.description } : q);
-      setQuotes(updated); saveQuotes(updated);
+      const updated = quotes.find(q => q.id === editId)!;
+      const newQ: Quote = { ...updated, client: form.client, email: form.email, amount: parseFloat(form.amount), due: form.due, vatRate: parseFloat(form.vatRate), description: form.description };
+      await upsertQuote(newQ);
+      setQuotes(prev => prev.map(q => q.id === editId ? newQ : q));
       showToast("✓ " + tr("saveChanges"));
     } else {
       const newQ: Quote = {
@@ -131,26 +147,29 @@ export default function QuotesPage() {
         date: new Date().toISOString().split("T")[0],
         due: form.due, vatRate: parseFloat(form.vatRate), description: form.description,
       };
-      const updated = [newQ, ...quotes];
-      setQuotes(updated); saveQuotes(updated);
+      await upsertQuote(newQ);
+      setQuotes(prev => [newQ, ...prev]);
       showToast(tr("quoteCreated"));
     }
     setShowModal(false); setForm(EMPTY_FORM);
   }
 
-  function updateStatus(id: string, status: QuoteStatus) {
-    const updated = quotes.map(q => q.id === id ? { ...q, status } : q);
-    setQuotes(updated); saveQuotes(updated);
+  async function updateStatus(id: string, status: QuoteStatus) {
+    const q = quotes.find(x => x.id === id);
+    if (!q) return;
+    const updated = { ...q, status };
+    await upsertQuote(updated);
+    setQuotes(prev => prev.map(x => x.id === id ? updated : x));
   }
 
-  function deleteQuote(id: string) {
-    const updated = quotes.filter(q => q.id !== id);
-    setQuotes(updated); saveQuotes(updated);
+  async function handleDeleteQuote(id: string) {
+    await dbDeleteQuote(id);
+    setQuotes(prev => prev.filter(q => q.id !== id));
     showToast(tr("quoteDeleted"));
   }
 
-  function convertToInvoice(q: Quote) {
-    const invoices = getInvoices();
+  async function convertToInvoice(q: Quote) {
+    const invoices = await getInvoices();
     const nums = invoices.map(i => parseInt(i.id.replace(/\D/g, ""), 10)).filter(n => !isNaN(n));
     const maxId = nums.length ? Math.max(...nums) : 0;
     const newInv = {
@@ -161,9 +180,10 @@ export default function QuotesPage() {
       date: new Date().toISOString().split("T")[0],
       due: q.due, vatRate: q.vatRate, recurring: "none" as const,
     };
-    saveInvoices([newInv, ...invoices]);
-    const updated = quotes.map(qx => qx.id === q.id ? { ...qx, status: "accepted" as const } : qx);
-    setQuotes(updated); saveQuotes(updated);
+    await upsertInvoice(newInv);
+    const updatedQ = { ...q, status: "accepted" as const };
+    await upsertQuote(updatedQ);
+    setQuotes(prev => prev.map(x => x.id === q.id ? updatedQ : x));
     showToast(tr("quoteConverted"));
   }
 
@@ -176,6 +196,15 @@ export default function QuotesPage() {
 
   const totalAccepted = quotes.filter(q => q.status === "accepted").reduce((s, q) => s + q.amount, 0);
   const totalPending  = quotes.filter(q => q.status === "sent").reduce((s, q) => s + q.amount, 0);
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -202,10 +231,10 @@ export default function QuotesPage() {
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mb-6">
           {[
-            { label: tr("quotesTitle"), value: quotes.length, color: "text-slate-900" },
-            { label: tr("quoteSent"),   value: quotes.filter(q => q.status === "sent").length, color: "text-sky-600" },
-            { label: tr("quoteSentValue"),    value: totalAccepted.toLocaleString(locale) + " €", color: "text-emerald-600" },
-            { label: tr("quoteAwaitingValue"), value: totalPending.toLocaleString(locale) + " €",  color: "text-amber-600" },
+            { label: tr("quotesTitle"),       value: quotes.length,                                  color: "text-slate-900" },
+            { label: tr("quoteSent"),          value: quotes.filter(q => q.status === "sent").length,  color: "text-sky-600" },
+            { label: tr("quoteSentValue"),     value: totalAccepted.toLocaleString(locale) + " €",    color: "text-emerald-600" },
+            { label: tr("quoteAwaitingValue"), value: totalPending.toLocaleString(locale)  + " €",    color: "text-amber-600" },
           ].map(({ label, value, color }) => (
             <div key={label} className="card p-4">
               <p className="text-xs text-slate-400 mb-1">{label}</p>
@@ -263,8 +292,8 @@ export default function QuotesPage() {
                           </button>
                         )}
                         <button onClick={() => openEdit(q)} title={tr("editLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => printQuote(q)} title={tr("pdf")} className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => deleteQuote(q.id)} title={tr("deleteLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => printQuote(q, company)} title={tr("pdf")} className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"><Download className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => handleDeleteQuote(q.id)} title={tr("deleteLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                         {q.status === "accepted" && (
                           <span className="text-xs text-emerald-600 font-medium flex items-center gap-1 ml-1">
                             <Check className="w-3 h-3" /> {tr("quoteConverted2")}

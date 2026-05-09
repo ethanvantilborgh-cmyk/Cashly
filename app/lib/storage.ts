@@ -26,7 +26,7 @@ export type Invoice = {
 };
 
 export type Expense = {
-  id: number;
+  id: string;            // UUID string (was number in localStorage era)
   label: string;
   amount: number;
   category: string;      // language-agnostic code: "software", "transport", etc.
@@ -103,12 +103,12 @@ const SEED_INVOICES: Invoice[] = [
 ];
 
 const SEED_EXPENSES: Expense[] = [
-  { id: 1, label: "Adobe Creative Cloud",  amount: 54.99,  category: "software",       date: "2025-04-30", note: "" },
-  { id: 2, label: "Client trip Paris",      amount: 87.50,  category: "transport",      date: "2025-04-28", note: "Train round-trip" },
-  { id: 3, label: "Server hosting",         amount: 29.00,  category: "infrastructure", date: "2025-04-27", note: "Vercel Pro" },
-  { id: 4, label: "Google Ads",            amount: 150.00, category: "marketing",      date: "2025-04-25", note: "" },
-  { id: 5, label: "Printer cartridges",    amount: 34.90,  category: "supplies",       date: "2025-04-20", note: "" },
-  { id: 6, label: "UX Design Training",    amount: 299.00, category: "training",       date: "2025-04-15", note: "Udemy" },
+  { id: "exp-1", label: "Adobe Creative Cloud",  amount: 54.99,  category: "software",       date: "2025-04-30", note: "" },
+  { id: "exp-2", label: "Client trip Paris",      amount: 87.50,  category: "transport",      date: "2025-04-28", note: "Train round-trip" },
+  { id: "exp-3", label: "Server hosting",         amount: 29.00,  category: "infrastructure", date: "2025-04-27", note: "Vercel Pro" },
+  { id: "exp-4", label: "Google Ads",            amount: 150.00, category: "marketing",      date: "2025-04-25", note: "" },
+  { id: "exp-5", label: "Printer cartridges",    amount: 34.90,  category: "supplies",       date: "2025-04-20", note: "" },
+  { id: "exp-6", label: "UX Design Training",    amount: 299.00, category: "training",       date: "2025-04-15", note: "Udemy" },
 ];
 
 const SEED_SERVICES: Service[] = [
@@ -212,17 +212,21 @@ export function invoiceTotalTTC(lines: InvoiceLine[]) { return lines.reduce((s, 
 
 // ─── Dashboard stats ──────────────────────────────────────────────────────────
 
-export function getDashboardStats() {
-  const invoices = getInvoices();
-  const expenses = getExpenses();
-  const revenue   = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
-  const totalExp  = expenses.reduce((s, e) => s + e.amount, 0);
-  const netProfit = revenue - totalExp;
+/** Pure function – pass pre-loaded data from Supabase */
+export function computeDashboardStats(invoices: Invoice[], expenses: Expense[]) {
+  const revenue     = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
+  const totalExp    = expenses.reduce((s, e) => s + e.amount, 0);
+  const netProfit   = revenue - totalExp;
   const unpaidAmt   = invoices.filter(i => i.status !== "paid").reduce((s, i) => s + i.amount, 0);
   const unpaidCount = invoices.filter(i => i.status !== "paid").length;
   const recentInvoices = [...invoices].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
   const recentExpenses = [...expenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
   return { revenue, totalExp, netProfit, unpaidAmt, unpaidCount, recentInvoices, recentExpenses };
+}
+
+/** @deprecated use computeDashboardStats with db data */
+export function getDashboardStats() {
+  return computeDashboardStats(getInvoices(), getExpenses());
 }
 
 // ─── VAT report ───────────────────────────────────────────────────────────────
@@ -237,9 +241,8 @@ export type VatQuarter = {
   expensesHT: number;
 };
 
-export function getVatReport(): VatQuarter[] {
-  const invoices = getInvoices();
-  const expenses = getExpenses();
+/** Pure function – pass pre-loaded data from Supabase */
+export function computeVatReport(invoices: Invoice[], expenses: Expense[]): VatQuarter[] {
 
   const quarters: Record<string, VatQuarter> = {};
 
@@ -267,6 +270,11 @@ export function getVatReport(): VatQuarter[] {
   return Object.values(quarters)
     .map(q => ({ ...q, vatDue: Math.max(0, q.vatCollected - q.vatDeductible) }))
     .sort((a, b) => a.year !== b.year ? a.year - b.year : a.quarter - b.quarter);
+}
+
+/** @deprecated use computeVatReport with db data */
+export function getVatReport(): VatQuarter[] {
+  return computeVatReport(getInvoices(), getExpenses());
 }
 
 // ─── Recurring helpers ────────────────────────────────────────────────────────

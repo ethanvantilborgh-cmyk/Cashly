@@ -5,13 +5,13 @@ import Link from "next/link";
 import { useLang } from "../context/LangContext";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { activatePro } from "../lib/pro";
-import { getDashboardStats, getInvoices, getExpenses, Invoice, Expense } from "../lib/storage";
+import { activatePro, isPro as dbIsPro } from "../lib/db";
+import { getInvoices, getExpenses } from "../lib/db";
+import { computeDashboardStats } from "../lib/storage";
+import type { Invoice, Expense } from "../lib/storage";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-function buildMonthly(lang: string) {
-  const invoices = getInvoices();
-  const expenses = getExpenses();
+function buildMonthly(invoices: Invoice[], expenses: Expense[], lang: string) {
   const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
   const now = new Date();
   return Array.from({ length: 6 }, (_, i) => {
@@ -29,14 +29,24 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const upgraded = searchParams.get("upgraded") === "true";
 
-  const [stats, setStats] = useState({ revenue: 0, totalExp: 0, netProfit: 0, unpaidAmt: 0, unpaidCount: 0, recentInvoices: [] as Invoice[], recentExpenses: [] as Expense[] });
+  const [stats, setStats]   = useState({ revenue: 0, totalExp: 0, netProfit: 0, unpaidAmt: 0, unpaidCount: 0, recentInvoices: [] as Invoice[], recentExpenses: [] as Expense[] });
   const [monthly, setMonthly] = useState<{ month: string; revenus: number; depenses: number }[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (upgraded) activatePro();
-    setStats(getDashboardStats());
-    setMonthly(buildMonthly(lang));
+    async function load() {
+      if (upgraded) await activatePro();
+      const [invoices, expenses] = await Promise.all([getInvoices(), getExpenses()]);
+      setStats(computeDashboardStats(invoices, expenses));
+      setMonthly(buildMonthly(invoices, expenses, lang));
+      setLoading(false);
+    }
+    load().catch(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [upgraded, lang]);
+
+  const [pro, setPro] = useState(false);
+  useEffect(() => { dbIsPro().then(setPro).catch(() => {}); }, []);
 
   const STATUS_MAP = {
     paid:    { label: tr("paid"),    className: "status-paid" },
@@ -46,6 +56,15 @@ function DashboardContent() {
 
   const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
   const fmt = (n: number) => n.toLocaleString(locale, { maximumFractionDigits: 0 }) + " €";
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -71,10 +90,10 @@ function DashboardContent() {
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: tr("revenue"),       value: fmt(stats.revenue),    sub: `${stats.recentInvoices.filter(i=>i.status==="paid").length} ${tr("paidInvoicesLabel")}`, up: true,  icon: TrendingUp,   color: "text-emerald-600", bg: "bg-emerald-50" },
-            { label: tr("expensesLabel"), value: fmt(stats.totalExp),   sub: `${stats.recentExpenses.length} ${tr("expensesCountLabel")}`,  up: false, icon: TrendingDown, color: "text-red-500",     bg: "bg-red-50" },
-            { label: tr("netProfit"),     value: fmt(stats.netProfit),  sub: stats.netProfit >= 0 ? tr("profit") : tr("deficit"), up: stats.netProfit >= 0, icon: TrendingUp, color: stats.netProfit >= 0 ? "text-sky-600" : "text-red-500", bg: stats.netProfit >= 0 ? "bg-sky-50" : "bg-red-50" },
-            { label: tr("unpaid"),        value: fmt(stats.unpaidAmt),  sub: `${stats.unpaidCount} ${tr("invoices").toLowerCase()}`, up: false, icon: AlertCircle,  color: "text-amber-600",   bg: "bg-amber-50" },
+            { label: tr("revenue"),       value: fmt(stats.revenue),   sub: `${stats.recentInvoices.filter(i=>i.status==="paid").length} ${tr("paidInvoicesLabel")}`, up: true,  icon: TrendingUp,   color: "text-emerald-600", bg: "bg-emerald-50" },
+            { label: tr("expensesLabel"), value: fmt(stats.totalExp),  sub: `${stats.recentExpenses.length} ${tr("expensesCountLabel")}`,  up: false, icon: TrendingDown, color: "text-red-500",     bg: "bg-red-50" },
+            { label: tr("netProfit"),     value: fmt(stats.netProfit), sub: stats.netProfit >= 0 ? tr("profit") : tr("deficit"), up: stats.netProfit >= 0, icon: TrendingUp, color: stats.netProfit >= 0 ? "text-sky-600" : "text-red-500", bg: stats.netProfit >= 0 ? "bg-sky-50" : "bg-red-50" },
+            { label: tr("unpaid"),        value: fmt(stats.unpaidAmt), sub: `${stats.unpaidCount} ${tr("invoices").toLowerCase()}`, up: false, icon: AlertCircle,  color: "text-amber-600",   bg: "bg-amber-50" },
           ].map(({ label, value, sub, up, icon: Icon, color, bg }) => (
             <div key={label} className="card p-5">
               <div className="flex items-start justify-between mb-3">
@@ -181,6 +200,9 @@ function DashboardContent() {
             </Link>
           </div>
         </div>
+
+        {/* Pro banner (unused but kept) */}
+        {pro && false && <div />}
       </main>
     </div>
   );

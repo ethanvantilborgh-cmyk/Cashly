@@ -1,18 +1,53 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { TrendingUp, Eye, EyeOff, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { TrendingUp, Eye, EyeOff, Check, Mail } from "lucide-react";
 import { useLang } from "../../context/LangContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function SignupPage() {
   const { tr } = useLang();
-  const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { signUp } = useAuth();
+  const router = useRouter();
 
-  function handleSubmit(e: React.FormEvent) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName,  setLastName]  = useState("");
+  const [company,   setCompany]   = useState("");
+  const [email,     setEmail]     = useState("");
+  const [password,  setPassword]  = useState("");
+  const [showPass,  setShowPass]  = useState(false);
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState<string | null>(null);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => { window.location.href = "/dashboard"; }, 1000);
+    setError(null);
+    const result = await signUp(email, password, { firstName, lastName, company });
+    if (result.error) {
+      setError(result.error);
+      setLoading(false);
+    } else if (result.needsConfirmation) {
+      setNeedsConfirmation(true);
+    } else {
+      router.push("/dashboard");
+    }
+  }
+
+  if (needsConfirmation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-sky-50 flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="card p-10 shadow-lg">
+            <Mail className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-slate-900 mb-2">{tr("checkYourEmail")}</h2>
+            <p className="text-slate-500 text-sm">{tr("confirmationSent")} <strong>{email}</strong></p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -30,33 +65,47 @@ export default function SignupPage() {
         </div>
 
         <div className="card p-8 shadow-lg shadow-slate-100">
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="fname" className="block text-sm font-medium text-slate-700 mb-2">{tr("firstName")}</label>
-                <input id="fname" type="text" required autoComplete="given-name" placeholder={tr("exampleFirstName")}
+                <input id="fname" type="text" required autoComplete="given-name"
+                  placeholder={tr("exampleFirstName")}
+                  value={firstName} onChange={e => setFirstName(e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
               </div>
               <div>
                 <label htmlFor="lname" className="block text-sm font-medium text-slate-700 mb-2">{tr("lastName")}</label>
-                <input id="lname" type="text" required autoComplete="family-name" placeholder={tr("exampleLastName")}
+                <input id="lname" type="text" required autoComplete="family-name"
+                  placeholder={tr("exampleLastName")}
+                  value={lastName} onChange={e => setLastName(e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
               </div>
             </div>
             <div>
               <label htmlFor="company" className="block text-sm font-medium text-slate-700 mb-2">{tr("company")}</label>
               <input id="company" type="text" placeholder={tr("exampleCompanyType")}
+                value={company} onChange={e => setCompany(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
             </div>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">{tr("email")}</label>
-              <input id="email" type="email" required autoComplete="email" placeholder={tr("exampleEmail")}
+              <input id="email" type="email" required autoComplete="email"
+                placeholder={tr("exampleEmail")}
+                value={email} onChange={e => setEmail(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">{tr("password")}</label>
               <div className="relative">
-                <input id="password" type={showPass ? "text" : "password"} required minLength={8} autoComplete="new-password" placeholder={tr("passwordMinChars")}
+                <input id="password" type={showPass ? "text" : "password"} required minLength={8}
+                  autoComplete="new-password" placeholder={tr("passwordMinChars")}
+                  value={password} onChange={e => setPassword(e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 pr-12 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
                 <button type="button" onClick={() => setShowPass(!showPass)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors" aria-label={tr("showPassword")}>

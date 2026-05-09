@@ -1,13 +1,11 @@
 "use client";
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
-import { getExpenses, saveExpenses } from "../lib/storage";
-import { Plus, Search, Receipt, X, Check, Pencil, Trash2 } from "lucide-react";
+import { getExpenses, upsertExpense, deleteExpense as dbDeleteExpense } from "../lib/db";
+import { Plus, Search, Receipt, X, Check, Pencil, Trash2, Upload, Download } from "lucide-react";
 import { useLang } from "../context/LangContext";
+import type { Expense } from "../lib/storage";
 
-type Expense = { id: number; label: string; amount: number; category: string; date: string; note: string; };
-
-// Language-agnostic category codes stored in localStorage
 const CATEGORY_CODES = ["software", "transport", "infrastructure", "marketing", "supplies", "training", "meals", "other"] as const;
 type CategoryCode = typeof CATEGORY_CODES[number];
 
@@ -27,25 +25,23 @@ const EMPTY_FORM = { label: "", amount: "", category: "", date: "", note: "" };
 export default function ExpensesPage() {
   const { lang, tr } = useLang();
   const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
-  const [expenses, setExpenses]   = useState<Expense[]>([]);
-  useEffect(() => { setExpenses(getExpenses()); }, []);
-  const [search, setSearch]       = useState("");
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [search, setSearch]     = useState("");
   const [filterCat, setFilterCat] = useState("all");
   const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId]       = useState<number | null>(null);
-  const [form, setForm]           = useState(EMPTY_FORM);
-  const [toast, setToast]         = useState("");
+  const [editId, setEditId]     = useState<string | null>(null);
+  const [form, setForm]         = useState(EMPTY_FORM);
+  const [toast, setToast]       = useState("");
 
-  // Translated labels for codes — must be inside component (uses tr)
+  useEffect(() => {
+    getExpenses().then(data => { setExpenses(data); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+
   const CATEGORY_LABELS: Record<string, string> = {
-    software:       tr("catSoftware"),
-    transport:      tr("catTransport"),
-    infrastructure: tr("catInfrastructure"),
-    marketing:      tr("catMarketing"),
-    supplies:       tr("catSupplies"),
-    training:       tr("catTraining"),
-    meals:          tr("catMeals"),
-    other:          tr("catOther"),
+    software: tr("catSoftware"), transport: tr("catTransport"), infrastructure: tr("catInfrastructure"),
+    marketing: tr("catMarketing"), supplies: tr("catSupplies"), training: tr("catTraining"),
+    meals: tr("catMeals"), other: tr("catOther"),
   };
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000); }
@@ -70,28 +66,76 @@ export default function ExpensesPage() {
 
   const total = filtered.reduce((s, e) => s + e.amount, 0);
 
-  function handleSubmit(ev: React.FormEvent) {
+  async function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault();
-    let updated: Expense[];
-    if (editId !== null) {
-      updated = expenses.map(e => e.id === editId
-        ? { ...e, label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORY_CODES[0], date: form.date, note: form.note }
-        : e
-      );
+    const payload: Expense = {
+      id: editId ?? "",
+      label: form.label,
+      amount: parseFloat(form.amount),
+      category: form.category || CATEGORY_CODES[0],
+      date: form.date,
+      note: form.note,
+    };
+    const saved = await upsertExpense(payload);
+    if (editId) {
+      setExpenses(prev => prev.map(e => e.id === editId ? saved : e));
       showToast("✓ " + tr("saveChanges"));
     } else {
-      updated = [{ id: Date.now(), label: form.label, amount: parseFloat(form.amount), category: form.category || CATEGORY_CODES[0], date: form.date, note: form.note }, ...expenses];
+      setExpenses(prev => [saved, ...prev]);
       showToast(tr("expenseAdded"));
     }
-    setExpenses(updated); saveExpenses(updated);
     setShowModal(false); setForm(EMPTY_FORM);
   }
 
-  function deleteExpense(id: number) {
-    const updated = expenses.filter(e => e.id !== id);
-    setExpenses(updated); saveExpenses(updated);
+  async function handleDeleteExpense(id: string) {
+    await dbDeleteExpense(id);
+    setExpenses(prev => prev.filter(e => e.id !== id));
     showToast(tr("expenseDeleted"));
   }
+
+  async function handleImportCSV(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const lines = text.split("\n").filter(Boolean);
+    const headers = lines[0].split(/[,;]/).map(h => h.replace(/["']/g, "").trim().toLowerCase());
+    const dateIdx   = headers.findIndex(h => h.includes("date"));
+    const labelIdx  = headers.findIndex(h => h.includes("lib") || h.includes("label") || h.includes("desc") || h.includes("comm"));
+    const amountIdx = headers.findIndex(h => h.includes("mont") || h.includes("amount") || h.includes("debit") || h.includes("débit"));
+    if (dateIdx === -1 || labelIdx === -1 || amountIdx === -1) {
+      showToast("❌ Format non reconnu (colonnes: date, libellé, montant)");
+      return;
+    }
+    let imported = 0;
+    for (const line of lines.slice(1)) {
+      const cols = line.split(/[,;]/).map(c => c.replace(/["']/g, "").trim());
+      const rawAmount = parseFloat(cols[amountIdx]?.replace(",", ".") ?? "0");
+      if (isNaN(rawAmount) || rawAmount >= 0) continue; // On importe seulement les débits
+      const exp: Expense = {
+        id: "", label: cols[labelIdx] || "Import", amount: Math.abs(rawAmount),
+        category: "other", date: cols[dateIdx], note: "Import CSV",
+      };
+      const saved = await upsertExpense(exp);
+      setExpenses(prev => [saved, ...prev]);
+      imported++;
+    }
+    showToast(`✅ ${imported} dépenses importées`);
+    e.target.value = "";
+  }
+
+  async function exportExcel() {
+    const { exportExpensesToExcel } = await import("../lib/exportExcel");
+    exportExpensesToExcel(expenses, `cashly-depenses-${new Date().toISOString().split("T")[0]}`);
+  }
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -104,9 +148,18 @@ export default function ExpensesPage() {
             </h1>
             <p className="text-slate-500 text-sm mt-1">{tr("expensesSub")}</p>
           </div>
-          <button onClick={openCreate} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
-            <Plus className="w-4 h-4" /> {tr("add")}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={exportExcel} className="flex items-center gap-2 border border-slate-200 text-sm font-semibold px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+              <Download className="w-4 h-4" /> Export Excel
+            </button>
+            <label className="flex items-center gap-2 border border-slate-200 text-sm font-semibold px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+              <Upload className="w-4 h-4" /> Import CSV
+              <input type="file" accept=".csv,.txt" className="hidden" onChange={handleImportCSV} />
+            </label>
+            <button onClick={openCreate} className="gradient-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl text-white">
+              <Plus className="w-4 h-4" /> {tr("add")}
+            </button>
+          </div>
         </div>
 
         {toast && (
@@ -162,7 +215,7 @@ export default function ExpensesPage() {
                   <span className="text-sm font-semibold text-red-500 min-w-20 text-right">-{exp.amount.toFixed(2)} €</span>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(exp)} className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => deleteExpense(exp.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => handleDeleteExpense(exp.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
               </div>

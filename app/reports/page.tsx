@@ -4,20 +4,22 @@ import { BarChart2, TrendingUp, Download, FileText, Receipt } from "lucide-react
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { useLang } from "../context/LangContext";
 import { useState, useEffect } from "react";
-import { getInvoices, getExpenses, getVatReport, VatQuarter } from "../lib/storage";
+import { computeVatReport, VatQuarter } from "../lib/storage";
+import { getInvoices, getExpenses } from "../lib/db";
 
 export default function ReportsPage() {
   const { lang, tr } = useLang();
   const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
 
-  const [monthly, setMonthly]   = useState<{ month: string; revenus: number; depenses: number }[]>([]);
-  const [expByCat, setExpByCat] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [monthly, setMonthly]     = useState<{ month: string; revenus: number; depenses: number }[]>([]);
+  const [expByCat, setExpByCat]   = useState<{ name: string; value: number; color: string }[]>([]);
   const [invStatus, setInvStatus] = useState<{ name: string; value: number; color: string }[]>([]);
   const [vatReport, setVatReport] = useState<VatQuarter[]>([]);
+  const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
-    const invoices = getInvoices();
-    const expenses = getExpenses();
+    async function load() {
+    const [invoices, expenses] = await Promise.all([getInvoices(), getExpenses()]);
 
     // ── Monthly revenue vs expenses (last 6 months) ─────────────────────────
     const now = new Date();
@@ -63,7 +65,11 @@ export default function ReportsPage() {
     ]);
 
     // ── VAT report ───────────────────────────────────────────────────────────
-    setVatReport(getVatReport());
+    setVatReport(computeVatReport(invoices, expenses));
+    setLoading(false);
+    }
+    load().catch(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
   const totalRev = monthly.reduce((s, m) => s + m.revenus, 0);
@@ -87,6 +93,15 @@ export default function ReportsPage() {
     a.href = url; a.download = `cashly-${tr("reports").toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`;
     a.click(); URL.revokeObjectURL(url);
   }
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -201,7 +216,7 @@ export default function ReportsPage() {
             <h2 className="font-semibold text-slate-900 mb-1 flex items-center gap-2">
               <Receipt className="w-4 h-4 text-violet-500" /> {tr("vatReportTitle")}
             </h2>
-            <p className="text-xs text-slate-400 mb-5">{tr("vatCollectedLabel")} vs {tr("vatDeductibleLabel")}</p>
+            <p className="text-xs text-slate-400 mb-5">{tr("vatCollectedLabel")} {tr("vs")} {tr("vatDeductibleLabel")}</p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

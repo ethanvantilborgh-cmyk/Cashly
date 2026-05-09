@@ -3,6 +3,7 @@ import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
 import { Users, Plus, Search, X, Check, Building2, Mail, Phone, MapPin, Hash, Pencil, Trash2 } from "lucide-react";
 import { useLang } from "../context/LangContext";
+import { getClients, upsertClient, deleteClient as dbDeleteClient } from "../lib/db";
 
 export type Client = {
   id: string;
@@ -14,32 +15,21 @@ export type Client = {
   vat: string;
 };
 
-export const CLIENTS_KEY = "cashly_clients";
-
-export function getSavedClients(): Client[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(CLIENTS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
-function saveClients(clients: Client[]) {
-  localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
-}
-
 const EMPTY_FORM = { name: "", company: "", email: "", phone: "", address: "", vat: "" };
 
 export default function ClientsPage() {
   const { tr } = useLang();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [search, setSearch] = useState("");
+  const [clients, setClients]   = useState<Client[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [search, setSearch]     = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saved, setSaved] = useState(false);
+  const [editId, setEditId]     = useState<string | null>(null);
+  const [form, setForm]         = useState(EMPTY_FORM);
+  const [saved, setSaved]       = useState(false);
 
-  useEffect(() => { setClients(getSavedClients()); }, []);
+  useEffect(() => {
+    getClients().then(data => { setClients(data); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
 
   const filtered = clients.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -47,11 +37,7 @@ export default function ClientsPage() {
     c.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  function openCreate() {
-    setEditId(null);
-    setForm(EMPTY_FORM);
-    setShowModal(true);
-  }
+  function openCreate() { setEditId(null); setForm(EMPTY_FORM); setShowModal(true); }
 
   function openEdit(c: Client) {
     setEditId(c.id);
@@ -59,27 +45,26 @@ export default function ClientsPage() {
     setShowModal(true);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    let updated: Client[];
     if (editId) {
-      updated = clients.map(c => c.id === editId ? { ...c, ...form } : c);
+      const updated: Client = { id: editId, ...form };
+      await upsertClient(updated);
+      setClients(prev => prev.map(c => c.id === editId ? updated : c));
     } else {
-      const newClient: Client = { id: Date.now().toString(), ...form };
-      updated = [newClient, ...clients];
+      const newClient: Client = { id: crypto.randomUUID(), ...form };
+      await upsertClient(newClient);
+      setClients(prev => [newClient, ...prev]);
     }
-    setClients(updated);
-    saveClients(updated);
     setShowModal(false);
     setForm(EMPTY_FORM);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
 
-  function handleDelete(id: string) {
-    const updated = clients.filter(c => c.id !== id);
-    setClients(updated);
-    saveClients(updated);
+  async function handleDelete(id: string) {
+    await dbDeleteClient(id);
+    setClients(prev => prev.filter(c => c.id !== id));
   }
 
   function inp(key: keyof typeof EMPTY_FORM, label: string, type = "text", placeholder = "") {
@@ -92,6 +77,15 @@ export default function ClientsPage() {
       </div>
     );
   }
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -168,10 +162,10 @@ export default function ClientsPage() {
                 <h3 className="font-semibold text-slate-900 mb-0.5">{c.name}</h3>
                 {c.company && <p className="text-xs text-slate-400 mb-3 flex items-center gap-1"><Building2 className="w-3 h-3" /> {c.company}</p>}
                 <div className="space-y-1.5 mt-2">
-                  {c.email && <p className="text-xs text-slate-500 flex items-center gap-2"><Mail className="w-3 h-3 text-slate-300" /> {c.email}</p>}
-                  {c.phone && <p className="text-xs text-slate-500 flex items-center gap-2"><Phone className="w-3 h-3 text-slate-300" /> {c.phone}</p>}
-                  {c.address && <p className="text-xs text-slate-500 flex items-center gap-2"><MapPin className="w-3 h-3 text-slate-300" /> {c.address}</p>}
-                  {c.vat && <p className="text-xs text-emerald-600 flex items-center gap-2 font-medium"><Hash className="w-3 h-3" /> {c.vat}</p>}
+                  {c.email   && <p className="text-xs text-slate-500 flex items-center gap-2"><Mail    className="w-3 h-3 text-slate-300" /> {c.email}</p>}
+                  {c.phone   && <p className="text-xs text-slate-500 flex items-center gap-2"><Phone   className="w-3 h-3 text-slate-300" /> {c.phone}</p>}
+                  {c.address && <p className="text-xs text-slate-500 flex items-center gap-2"><MapPin  className="w-3 h-3 text-slate-300" /> {c.address}</p>}
+                  {c.vat     && <p className="text-xs text-emerald-600 flex items-center gap-2 font-medium"><Hash className="w-3 h-3" /> {c.vat}</p>}
                 </div>
               </div>
             ))}
@@ -188,12 +182,12 @@ export default function ClientsPage() {
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {inp("name", tr("clientName") + " *", "text", tr("placeholderClientName"))}
-              {inp("company", tr("clientCompany"), "text", tr("placeholderClientCompany"))}
-              {inp("email", tr("clientEmail"), "email", tr("placeholderClientEmail"))}
-              {inp("phone", tr("clientPhone"), "tel", "+32 2 123 45 67")}
-              {inp("address", tr("clientAddress"), "text", tr("placeholderClientAddress"))}
-              {inp("vat", tr("clientVat"), "text", "BE0123456789")}
+              {inp("name",    tr("clientName")    + " *", "text",  tr("placeholderClientName"))}
+              {inp("company", tr("clientCompany"),         "text",  tr("placeholderClientCompany"))}
+              {inp("email",   tr("clientEmail"),           "email", tr("placeholderClientEmail"))}
+              {inp("phone",   tr("clientPhone"),           "tel",   "+32 2 123 45 67")}
+              {inp("address", tr("clientAddress"),         "text",  tr("placeholderClientAddress"))}
+              {inp("vat",     tr("clientVat"),             "text",  "BE0123456789")}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 border border-slate-200 font-semibold py-2.5 rounded-xl text-slate-600 hover:bg-slate-50">{tr("cancel")}</button>

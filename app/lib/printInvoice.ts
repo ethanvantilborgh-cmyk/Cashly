@@ -1,8 +1,9 @@
-import { getCompanySettings } from "../settings/page";
+import type { CompanySettings } from "../settings/page";
 import { Invoice, InvoiceLine, lineHT, lineTVA, lineTTC, invoiceTotalHT, invoiceTotalTVA, invoiceTotalTTC } from "./storage";
 
-export function printInvoice(invoice: Invoice, paymentUrl?: string) {
-  const company = getCompanySettings();
+const DEFAULT_COMPANY: CompanySettings = { name:"", address:"", city:"", country:"", vat:"", phone:"", email:"", iban:"", invoicePrefix:"INV", paymentDays:"30", invoiceNotes:"" };
+
+export function printInvoice(invoice: Invoice, paymentUrl?: string, company: CompanySettings = DEFAULT_COMPANY) {
 
   const totalHT  = invoiceTotalHT(invoice.lines);
   const totalTVA = invoiceTotalTVA(invoice.lines);

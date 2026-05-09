@@ -3,8 +3,7 @@ import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
 import { Settings, Building2, CreditCard, Check, Save } from "lucide-react";
 import { useLang } from "../context/LangContext";
-
-export const STORAGE_KEY = "cashly_company";
+import { getProfile, saveProfile } from "../lib/db";
 
 export type CompanySettings = {
   name: string;
@@ -26,24 +25,28 @@ export const DEFAULT_COMPANY: CompanySettings = {
   paymentDays: "30", invoiceNotes: "",
 };
 
-export function getCompanySettings(): CompanySettings {
-  if (typeof window === "undefined") return DEFAULT_COMPANY;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...DEFAULT_COMPANY, ...JSON.parse(raw) } : DEFAULT_COMPANY;
-  } catch { return DEFAULT_COMPANY; }
-}
-
 export default function SettingsPage() {
   const { tr } = useLang();
   const [form, setForm] = useState<CompanySettings>(DEFAULT_COMPANY);
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { setForm(getCompanySettings()); }, []);
+  useEffect(() => {
+    getProfile().then(p => {
+      setForm({
+        name: p.name, address: p.address, city: p.city,
+        country: p.country, vat: p.vat, phone: p.phone,
+        email: p.email, iban: p.iban,
+        invoicePrefix: p.invoicePrefix, paymentDays: p.paymentDays,
+        invoiceNotes: p.invoiceNotes,
+      });
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+    await saveProfile(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
@@ -62,6 +65,15 @@ export default function SettingsPage() {
       </div>
     );
   }
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -90,13 +102,13 @@ export default function SettingsPage() {
               <h2 className="font-semibold text-slate-900">{tr("profileSection")}</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">{field("name", tr("companyName"), "text", tr("placeholderCompanyName"))}</div>
-              <div className="col-span-2">{field("address", tr("companyAddress"), "text", tr("placeholderCompanyAddress"))}</div>
-              <div>{field("city", tr("companyCity"), "text", tr("placeholderCompanyCity"))}</div>
-              <div>{field("country", tr("companyCountry"), "text", tr("placeholderCompanyCountry"))}</div>
-              <div>{field("vat", tr("companyVat"), "text", "BE0123456789")}</div>
-              <div>{field("phone", tr("companyPhone"), "tel", "+32 2 123 45 67")}</div>
-              <div className="col-span-2">{field("email", tr("companyEmail"), "email", tr("placeholderBillingEmail"))}</div>
+              <div className="col-span-2">{field("name",    tr("companyName"),    "text",  tr("placeholderCompanyName"))}</div>
+              <div className="col-span-2">{field("address", tr("companyAddress"), "text",  tr("placeholderCompanyAddress"))}</div>
+              <div>{field("city",    tr("companyCity"),    "text",  tr("placeholderCompanyCity"))}</div>
+              <div>{field("country", tr("companyCountry"), "text",  tr("placeholderCompanyCountry"))}</div>
+              <div>{field("vat",     tr("companyVat"),     "text",  "BE0123456789")}</div>
+              <div>{field("phone",   tr("companyPhone"),   "tel",   "+32 2 123 45 67")}</div>
+              <div className="col-span-2">{field("email",  tr("companyEmail"),   "email", tr("placeholderBillingEmail"))}</div>
             </div>
           </div>
 
@@ -106,9 +118,9 @@ export default function SettingsPage() {
               <h2 className="font-semibold text-slate-900">{tr("billingSection")}</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">{field("iban", tr("companyIban"), "text", "BE68 5390 0754 7034")}</div>
-              <div>{field("invoicePrefix", tr("invoicePrefix"), "text", "INV")}</div>
-              <div>{field("paymentDays", tr("paymentDays"), "number", "30")}</div>
+              <div className="col-span-2">{field("iban",          tr("companyIban"),    "text",   "BE68 5390 0754 7034")}</div>
+              <div>{field("invoicePrefix", tr("invoicePrefix"), "text",   "INV")}</div>
+              <div>{field("paymentDays",   tr("paymentDays"),   "number", "30")}</div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">{tr("invoiceNotes")}</label>
                 <textarea

@@ -3,11 +3,27 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --sidebar-bg: #ffffff;
+  --input-bg: #ffffff;
+  --muted: #64748b;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --sidebar-bg: #1e293b;
+  --input-bg: #1e293b;
+  --muted: #94a3b8;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  transition: background 0.2s, color 0.2s;
 }
 
 .glass {
@@ -18,9 +34,10 @@ body {
 }
 
 .card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 16px;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .card-hover {
@@ -53,17 +70,21 @@ body {
   border-radius: 10px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--muted);
   transition: background 0.15s, color 0.15s;
   text-decoration: none;
 }
 .sidebar-link:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--foreground);
 }
 .sidebar-link.active {
   background: #ecfdf5;
   color: #059669;
+}
+.dark .sidebar-link.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
 }
 
 .status-paid   { background: #dcfce7; color: #16a34a; }

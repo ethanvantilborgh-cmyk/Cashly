@@ -3,57 +3,68 @@ import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
 import { Package, Plus, X, Check, Pencil, Trash2, Tag } from "lucide-react";
 import { useLang } from "../context/LangContext";
-import { getServices, saveServices, Service } from "../lib/storage";
+import { getServices, upsertService, deleteService as dbDeleteService } from "../lib/db";
+import type { Service } from "../lib/storage";
 
-// Language-agnostic unit codes stored in localStorage
 const UNIT_CODES = ["hour", "day", "package", "unit", "month"] as const;
-
 const EMPTY: Omit<Service, "id"> = { name: "", description: "", unitPrice: 0, vatRate: 21, unit: "package" };
 
 export default function ServicesPage() {
   const { lang, tr } = useLang();
   const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
   const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading]   = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState(EMPTY);
-  const [toast, setToast] = useState("");
+  const [editId, setEditId]     = useState<string | null>(null);
+  const [form, setForm]         = useState(EMPTY);
+  const [toast, setToast]       = useState("");
 
-  // Translated labels for unit codes — must be inside component (uses tr)
   const UNIT_LABELS: Record<string, string> = {
-    hour:    tr("unitHour"),
-    day:     tr("unitDay"),
-    package: tr("unitPackage"),
-    unit:    tr("unitUnit"),
-    month:   tr("unitMonth"),
+    hour: tr("unitHour"), day: tr("unitDay"), package: tr("unitPackage"), unit: tr("unitUnit"), month: tr("unitMonth"),
   };
 
-  useEffect(() => { setServices(getServices()); }, []);
+  useEffect(() => {
+    getServices().then(data => { setServices(data); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 3000); }
-
   function openCreate() { setEditId(null); setForm(EMPTY); setShowModal(true); }
-  function openEdit(s: Service) { setEditId(s.id); setForm({ name: s.name, description: s.description, unitPrice: s.unitPrice, vatRate: s.vatRate, unit: s.unit }); setShowModal(true); }
+  function openEdit(s: Service) {
+    setEditId(s.id);
+    setForm({ name: s.name, description: s.description, unitPrice: s.unitPrice, vatRate: s.vatRate, unit: s.unit });
+    setShowModal(true);
+  }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    let updated: Service[];
     if (editId) {
-      updated = services.map(s => s.id === editId ? { ...s, ...form } : s);
+      const updated: Service = { id: editId, ...form };
+      await upsertService(updated);
+      setServices(prev => prev.map(s => s.id === editId ? updated : s));
     } else {
-      updated = [{ id: Date.now().toString(), ...form }, ...services];
+      const newSvc: Service = { id: crypto.randomUUID(), ...form };
+      await upsertService(newSvc);
+      setServices(prev => [newSvc, ...prev]);
     }
-    setServices(updated); saveServices(updated);
     setShowModal(false); setForm(EMPTY);
     showToast(editId ? "✓ " + tr("saveChanges") : "✓ " + tr("addService"));
   }
 
-  function handleDelete(id: string) {
-    const updated = services.filter(s => s.id !== id);
-    setServices(updated); saveServices(updated);
+  async function handleDelete(id: string) {
+    await dbDeleteService(id);
+    setServices(prev => prev.filter(s => s.id !== id));
   }
 
   const VAT_COLORS: Record<number, string> = { 0: "bg-slate-100 text-slate-600", 6: "bg-sky-100 text-sky-700", 21: "bg-violet-100 text-violet-700" };
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+      </main>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-50">
