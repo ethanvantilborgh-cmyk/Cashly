@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { invoiceTotalTTC } from "../../lib/storage";
 
-// Admin client — bypasses RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+// Admin client created inside handlers to avoid build-time evaluation
+function getAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 /**
  * POST /api/reminders
@@ -25,6 +27,8 @@ export async function POST(req: NextRequest) {
     if (!RESEND_KEY || RESEND_KEY.startsWith("re_your_")) {
       return NextResponse.json({ message: "Resend not configured", sent: 0 }, { status: 200 });
     }
+
+    const supabaseAdmin = getAdmin();
 
     // Fetch all overdue invoices + their user's profile
     const { data: invoices, error } = await supabaseAdmin
@@ -115,6 +119,7 @@ export async function POST(req: NextRequest) {
  */
 export async function GET() {
   try {
+    const supabaseAdmin = getAdmin();
     const { count, error } = await supabaseAdmin
       .from("invoices")
       .select("id", { count: "exact", head: true })
