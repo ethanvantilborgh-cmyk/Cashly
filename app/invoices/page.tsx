@@ -1,7 +1,7 @@
 "use client";
 import Sidebar from "../components/Sidebar";
 import { useState, useEffect } from "react";
-import { Plus, Search, FileText, Download, X, Check, Lock, Crown, ChevronDown, CheckCircle2, Link2, Mail, FileDown, RefreshCw, Trash2, Package, Pencil, Copy } from "lucide-react";
+import { Plus, Search, FileText, Download, X, Check, Lock, Crown, ChevronDown, CheckCircle2, Link2, Mail, FileDown, RefreshCw, Trash2, Package, Pencil, Copy, ReceiptText } from "lucide-react";
 import { useLang } from "../context/LangContext";
 import { printInvoice } from "../lib/printInvoice";
 import { isPro as dbIsPro } from "../lib/db";
@@ -136,6 +136,28 @@ export default function InvoicesPage() {
     await upsertInvoice(dup);
     setInvoices(prev => [dup, ...prev]);
     showToast("✓ " + dup.id + " — " + tr("invoiceDuplicated"));
+  }
+
+  async function createCreditNote(inv: Invoice) {
+    const prefix = company?.invoicePrefix?.trim() || "INV";
+    const creditId = `${prefix}-AV-${inv.id.replace(/\D/g, "").padStart(3, "0")}`;
+    const creditNote: Invoice = {
+      ...inv,
+      id: creditId,
+      status: "paid",
+      date: new Date().toISOString().split("T")[0],
+      due: new Date().toISOString().split("T")[0],
+      recurring: "none",
+      lines: inv.lines.map(l => ({
+        ...l,
+        id: Date.now().toString() + Math.random(),
+        qty: -Math.abs(l.qty),            // negative qty = credit
+      })),
+      amount: -Math.abs(inv.amount),
+    };
+    await upsertInvoice(creditNote);
+    setInvoices(prev => [creditNote, ...prev]);
+    showToast("✓ " + tr("creditNoteCreated") + " " + creditId);
   }
 
   function openEdit(inv: Invoice) {
@@ -412,7 +434,8 @@ export default function InvoicesPage() {
                 <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-4 py-3">
                     <p className="font-mono text-xs text-slate-500">{inv.id}</p>
-                    {inv.recurring !== "none" && <p className="text-xs text-emerald-600 font-medium mt-0.5">{RECURRING_LABELS[inv.recurring]}</p>}
+                    {inv.id.includes("-AV-") && <p className="text-xs text-violet-600 font-semibold mt-0.5">📋 {tr("creditNote")}</p>}
+                    {!inv.id.includes("-AV-") && inv.recurring !== "none" && <p className="text-xs text-emerald-600 font-medium mt-0.5">{RECURRING_LABELS[inv.recurring]}</p>}
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-slate-900">{inv.client}</p>
@@ -447,6 +470,9 @@ export default function InvoicesPage() {
                         <button onClick={() => doGenerateNext(inv)} title={tr("generateNext")} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"><RefreshCw className="w-3.5 h-3.5" /></button>
                       )}
                       <button onClick={() => downloadPdf(inv)} title={tr("pdf")} disabled={payLoading === inv.id + "_pdf"} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"><Download className="w-3.5 h-3.5" /></button>
+                      {inv.status === "paid" && !inv.id.includes("-AV-") && (
+                        <button onClick={() => createCreditNote(inv)} title={tr("createCreditNote")} className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"><ReceiptText className="w-3.5 h-3.5" /></button>
+                      )}
                       <button onClick={() => handleDeleteInvoice(inv.id)} title={tr("deleteLabel")} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>

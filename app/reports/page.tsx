@@ -1,38 +1,62 @@
 "use client";
 import Sidebar from "../components/Sidebar";
-import { BarChart2, TrendingUp, Download, FileText, Receipt } from "lucide-react";
+import { BarChart2, TrendingUp, Download, FileText, Receipt, ChevronDown } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { useLang } from "../context/LangContext";
 import { useState, useEffect } from "react";
 import { computeVatReport, VatQuarter } from "../lib/storage";
 import { getInvoices, getExpenses } from "../lib/db";
+import type { Invoice } from "../lib/storage";
 
 export default function ReportsPage() {
   const { lang, tr } = useLang();
   const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
 
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [allInvoices, setAllInvoices]   = useState<Invoice[]>([]);
   const [monthly, setMonthly]     = useState<{ month: string; revenus: number; depenses: number }[]>([]);
   const [expByCat, setExpByCat]   = useState<{ name: string; value: number; color: string }[]>([]);
   const [invStatus, setInvStatus] = useState<{ name: string; value: number; color: string }[]>([]);
   const [vatReport, setVatReport] = useState<VatQuarter[]>([]);
+  const [cashflow, setCashflow]   = useState<{ month: string; expected: number; date: string }[]>([]);
   const [loading, setLoading]     = useState(true);
+
+  const availableYears = Array.from(
+    { length: currentYear - 2023 + 2 },
+    (_, i) => currentYear + 1 - i
+  ).filter(y => y >= 2024);
 
   useEffect(() => {
     async function load() {
     const [invoices, expenses] = await Promise.all([getInvoices(), getExpenses()]);
+    setAllInvoices(invoices);
 
-    // ── Monthly revenue vs expenses (last 6 months) ─────────────────────────
-    const now = new Date();
+    // ── Monthly revenue vs expenses (selected year, all 12 months) ──────────
     const months: { month: string; revenus: number; depenses: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    for (let m = 0; m < 12; m++) {
+      const d = new Date(selectedYear, m, 1);
+      const key = `${selectedYear}-${String(m + 1).padStart(2, "0")}`;
       const label = d.toLocaleDateString(locale, { month: "short" });
       const revenus  = invoices.filter(inv => inv.status === "paid" && inv.date.startsWith(key)).reduce((s, inv) => s + inv.amount, 0);
       const depenses = expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + e.amount, 0);
       months.push({ month: label.charAt(0).toUpperCase() + label.slice(1, 3), revenus, depenses });
     }
     setMonthly(months);
+
+    // ── Cashflow projection (next 3 months — pending invoices) ───────────────
+    const today = new Date();
+    const projection: { month: string; expected: number; date: string }[] = [];
+    for (let i = 1; i <= 3; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString(locale, { month: "long" });
+      const expected = invoices
+        .filter(inv => (inv.status === "pending" || inv.status === "overdue") && inv.due.startsWith(key))
+        .reduce((s, inv) => s + inv.amount, 0);
+      projection.push({ month: label.charAt(0).toUpperCase() + label.slice(1), expected, date: key });
+    }
+    setCashflow(projection);
 
     // ── Expenses by category ─────────────────────────────────────────────────
     const CAT_COLORS: Record<string, string> = {
@@ -70,7 +94,7 @@ export default function ReportsPage() {
     }
     load().catch(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang]);
+  }, [lang, selectedYear]);
 
   const totalRev = monthly.reduce((s, m) => s + m.revenus, 0);
   const totalDep = monthly.reduce((s, m) => s + m.depenses, 0);
@@ -112,11 +136,26 @@ export default function ReportsPage() {
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <BarChart2 className="w-6 h-6 text-violet-500" /> {tr("reportsTitle")}
             </h1>
-            <p className="text-slate-500 text-sm mt-1">{tr("reportsSub")} · {tr("realData")}</p>
+            <p className="text-slate-500 text-sm mt-1">{tr("realData")}</p>
           </div>
-          <button onClick={exportCSV} className="flex items-center gap-2 border border-slate-200 text-sm font-semibold px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-            <Download className="w-4 h-4" /> {tr("exportCsv")}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Year selector */}
+            <div className="relative">
+              <select
+                value={selectedYear}
+                onChange={e => setSelectedYear(Number(e.target.value))}
+                className="appearance-none border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm font-semibold text-slate-700 bg-white outline-none focus:border-emerald-400 cursor-pointer hover:bg-slate-50 transition-colors"
+              >
+                {availableYears.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+            </div>
+            <button onClick={exportCSV} className="flex items-center gap-2 border border-slate-200 text-sm font-semibold px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+              <Download className="w-4 h-4" /> {tr("exportCsv")}
+            </button>
+          </div>
         </div>
 
         {/* KPIs */}
@@ -209,6 +248,39 @@ export default function ReportsPage() {
             ))}
           </div>
         </div>
+
+        {/* Cashflow projection */}
+        {cashflow.some(c => c.expected > 0) && (
+          <div className="card p-6 mb-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-sky-500" /> {tr("cashflowTitle")}
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">{tr("cashflowSub")}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-bold text-sky-600">
+                  {cashflow.reduce((s, c) => s + c.expected, 0).toLocaleString(locale, { maximumFractionDigits: 0 })} €
+                </p>
+                <p className="text-xs text-slate-400">{tr("next3Months")}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              {cashflow.map(c => (
+                <div key={c.date} className={`rounded-xl p-4 ${c.expected > 0 ? "bg-sky-50 border border-sky-100" : "bg-slate-50 border border-slate-100"}`}>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{c.month}</p>
+                  <p className={`text-xl font-bold ${c.expected > 0 ? "text-sky-700" : "text-slate-300"}`}>
+                    {c.expected > 0 ? c.expected.toLocaleString(locale, { maximumFractionDigits: 0 }) + " €" : "—"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {c.expected > 0 ? tr("expectedRevenue") : tr("noInvoice")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* TVA trimestrielle */}
         {vatReport.length > 0 && (

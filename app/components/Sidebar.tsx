@@ -9,6 +9,7 @@ import {
 import { useLang } from "../context/LangContext";
 import { Lang } from "../lib/translations";
 import UpgradeButton from "./UpgradeButton";
+import NotificationBell from "./NotificationBell";
 import { useState, useEffect } from "react";
 import { isPro as dbIsPro } from "../lib/db";
 import { useAuth } from "../context/AuthContext";
@@ -84,13 +85,16 @@ export default function Sidebar() {
           </div>
           <span className="font-bold text-lg gradient-text">Cashly</span>
         </Link>
-        {/* Close btn — mobile only */}
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          {/* Close btn — mobile only */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Search hint (⌘K) */}

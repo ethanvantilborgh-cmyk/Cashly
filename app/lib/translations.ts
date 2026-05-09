@@ -457,6 +457,25 @@ export const t = {
     onboardingAddClient: "Ajouter un client",
     onboardingGoToDashboard: "Aller au dashboard →",
     onboardingBack: "Retour",
+
+    // Notifications
+    notifications: "Notifications",
+    noNotifications: "Aucune notification",
+    active: "actives",
+    overdueLabel: "En retard depuis le",
+    dueSoonLabel: "Échéance le",
+    overdueInvoicesAlert: "facture(s) en retard à traiter",
+
+    // Credit notes
+    creditNote: "Avoir",
+    createCreditNote: "Créer un avoir",
+    creditNoteCreated: "Avoir créé !",
+
+    // Cashflow projection
+    cashflowTitle: "Projection de trésorerie",
+    cashflowSub: "Factures en attente des 3 prochains mois",
+    next3Months: "sur 3 mois",
+    expectedRevenue: "à encaisser",
   },
 
   en: {
@@ -888,6 +907,25 @@ export const t = {
     onboardingAddClient: "Add a client",
     onboardingGoToDashboard: "Go to dashboard →",
     onboardingBack: "Back",
+
+    // Notifications
+    notifications: "Notifications",
+    noNotifications: "No notifications",
+    active: "active",
+    overdueLabel: "Overdue since",
+    dueSoonLabel: "Due on",
+    overdueInvoicesAlert: "overdue invoice(s) to handle",
+
+    // Credit notes
+    creditNote: "Credit Note",
+    createCreditNote: "Create credit note",
+    creditNoteCreated: "Credit note created!",
+
+    // Cashflow projection
+    cashflowTitle: "Cashflow projection",
+    cashflowSub: "Pending invoices for the next 3 months",
+    next3Months: "over 3 months",
+    expectedRevenue: "expected",
   },
 
   nl: {
@@ -1319,6 +1357,25 @@ export const t = {
     onboardingAddClient: "Klant toevoegen",
     onboardingGoToDashboard: "Naar dashboard →",
     onboardingBack: "Terug",
+
+    // Notifications
+    notifications: "Meldingen",
+    noNotifications: "Geen meldingen",
+    active: "actief",
+    overdueLabel: "Achterstallig sinds",
+    dueSoonLabel: "Vervalt op",
+    overdueInvoicesAlert: "achterstallige factuur/facturen",
+
+    // Credit notes
+    creditNote: "Creditnota",
+    createCreditNote: "Creditnota maken",
+    creditNoteCreated: "Creditnota aangemaakt!",
+
+    // Cashflow projection
+    cashflowTitle: "Kasstroom projectie",
+    cashflowSub: "Openstaande facturen voor de komende 3 maanden",
+    next3Months: "over 3 maanden",
+    expectedRevenue: "te ontvangen",
   },
 };
 

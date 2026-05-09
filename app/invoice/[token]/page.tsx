@@ -13,9 +13,11 @@ function fmt(n: number) { return n.toLocaleString("fr-FR", { minimumFractionDigi
 
 export default function PublicInvoicePage() {
   const { token } = useParams<{ token: string }>();
-  const [data, setData]     = useState<PageData | null>(null);
-  const [error, setError]   = useState("");
-  const [loading, setLoading] = useState(true);
+  const [data, setData]         = useState<PageData | null>(null);
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(true);
+  const [payLoading, setPayLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -44,6 +46,51 @@ export default function PublicInvoicePage() {
       .catch(() => setError("Erreur de chargement"))
       .finally(() => setLoading(false));
   }, [token]);
+
+  async function handlePay() {
+    if (!data) return;
+    setPayLoading(true);
+    try {
+      const ttc = invoiceTotalTTC(data.invoice.lines);
+      const res = await fetch("/api/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: ttc,
+          invoiceId: data.invoice.id,
+          clientName: data.invoice.client,
+          vatRate: 0,
+        }),
+      });
+      const json = await res.json();
+      if (json.url) window.location.href = json.url;
+    } catch { /* silent */ }
+    setPayLoading(false);
+  }
+
+  async function handleDownloadPdf() {
+    if (!data) return;
+    setPdfLoading(true);
+    try {
+      const res = await fetch("/api/pdf-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoice: data.invoice, company: data.company }),
+      });
+      if (res.headers.get("Content-Type")?.includes("application/pdf")) {
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href = url; a.download = `facture-${data.invoice.id}.pdf`; a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        window.print();
+      }
+    } catch {
+      window.print();
+    }
+    setPdfLoading(false);
+  }
 
   if (loading) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -74,6 +121,8 @@ export default function PublicInvoicePage() {
   const statusLabel = invoice.status === "paid" ? "Payée" : invoice.status === "pending" ? "En attente" : "En retard";
   const statusColor = invoice.status === "paid" ? "bg-emerald-100 text-emerald-700" : invoice.status === "pending" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700";
 
+  const isPaid = invoice.status === "paid";
+
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
@@ -91,6 +140,37 @@ export default function PublicInvoicePage() {
             </div>
           </div>
         </div>
+
+        {/* Pay now banner (if unpaid) */}
+        {!isPaid && (
+          <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <p className="font-semibold text-slate-900">Montant à régler</p>
+              <p className="text-3xl font-black text-emerald-600 mt-0.5">{fmt(totalTTC)} €</p>
+              <p className="text-sm text-slate-400 mt-0.5">Échéance : {invoice.due}</p>
+            </div>
+            <button
+              onClick={handlePay}
+              disabled={payLoading}
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-sky-500 text-white font-bold px-8 py-3.5 rounded-xl text-sm shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {payLoading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : "💳"}
+              {payLoading ? "Redirection..." : "Payer en ligne"}
+            </button>
+          </div>
+        )}
+
+        {isPaid && (
+          <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-xl">✅</div>
+            <div>
+              <p className="font-semibold text-emerald-800">Facture payée</p>
+              <p className="text-sm text-emerald-600">Cette facture a bien été réglée. Merci !</p>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           {/* Parties */}
@@ -174,12 +254,31 @@ export default function PublicInvoicePage() {
           </div>
         </div>
 
-        {/* Print button */}
-        <div className="text-center mt-6">
-          <button onClick={() => window.print()}
-            className="bg-white border border-slate-200 text-slate-600 px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-slate-50 transition-colors">
-            🖨️ Imprimer / Enregistrer en PDF
+        {/* Action buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-center print:hidden">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+            className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-slate-50 transition-colors disabled:opacity-50"
+          >
+            {pdfLoading ? <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" /> : "📄"}
+            {pdfLoading ? "Génération..." : "Télécharger PDF"}
           </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-600 px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-slate-50 transition-colors"
+          >
+            🖨️ Imprimer
+          </button>
+          {!isPaid && (
+            <button
+              onClick={handlePay}
+              disabled={payLoading}
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-sky-500 text-white font-bold px-8 py-2.5 rounded-xl text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              💳 {payLoading ? "Redirection..." : "Payer en ligne"}
+            </button>
+          )}
         </div>
       </div>
     </div>
