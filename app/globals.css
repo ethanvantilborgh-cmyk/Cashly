@@ -97,3 +97,96 @@ body {
   padding: 2px 8px;
   border-radius: 999px;
 }
+
+/* ── Mobile responsive helpers ────────────────────────────────────────────── */
+
+/* Push content right of the hamburger on mobile */
+@media (max-width: 767px) {
+  main > *:first-child,
+  main > .flex:first-child {
+    padding-left: 1rem;
+  }
+}
+
+/* Make tables horizontally scrollable on small screens */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Truncate long text on mobile */
+@media (max-width: 640px) {
+  .mobile-truncate {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Card adapts to dark mode text */
+.card p, .card span, .card h1, .card h2, .card h3 {
+  transition: color 0.2s;
+}
+
+/* Input dark mode */
+.dark input,
+.dark select,
+.dark textarea {
+  background: var(--input-bg);
+  color: var(--foreground);
+  border-color: var(--card-border);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--muted);
+}
+
+/* Table dark mode */
+.dark table thead {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dark table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Focus ring in dark mode */
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
+}
+
+/* Sidebar mobile safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  aside {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+.dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+/* Smooth page transitions */
+main {
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile: add top padding to account for hamburger button */
+@media (max-width: 767px) {
+  .page-main {
+    padding-top: 4.5rem;
+  }
+}

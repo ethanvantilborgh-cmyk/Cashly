@@ -408,6 +408,55 @@ export const t = {
     placeholderCompanyCity: "1000 Bruxelles",
     placeholderCompanyCountry: "Belgique",
     placeholderBillingEmail: "factures@acme.be",
+
+    // Theme toggle
+    darkMode: "Mode sombre",
+    lightMode: "Mode clair",
+
+    // Global search
+    searchPlaceholder: "Rechercher factures, clients, dépenses...",
+    searchHint: "Tapez pour rechercher dans toute l'application",
+    searchNoResults: "Aucun résultat pour",
+    searchResultsInvoices: "Factures",
+    searchResultsClients: "Clients",
+    searchResultsExpenses: "Dépenses",
+
+    // Dashboard top clients
+    topClients: "Top clients",
+    topClientsSub: "Par chiffre d'affaires encaissé",
+    noTopClients: "Aucune donnée disponible",
+
+    // Client invoice history
+    invoiceHistory: "Historique des factures",
+    clientTotalRevenue: "CA total",
+    clientUnpaid: "Impayé",
+    noClientInvoices: "Aucune facture pour ce client",
+    viewInvoices: "Voir les factures",
+
+    // Sorting
+    sortAsc: "Croissant",
+    sortDesc: "Décroissant",
+
+    // Reminders
+    sendReminders: "Envoyer les relances",
+    remindersSent: "relance(s) envoyée(s)",
+    noOverdueInvoices: "Aucune facture en retard",
+
+    // Onboarding
+    onboardingWelcome: "Bienvenue sur Cashly !",
+    onboardingWelcomeSub: "Configurons votre entreprise en 2 étapes",
+    onboardingStep1Title: "Votre entreprise",
+    onboardingStep1Sub: "Informations de base",
+    onboardingStep2Title: "Facturation",
+    onboardingStep2Sub: "Paramètres de paiement",
+    onboardingDoneTitle: "Tout est prêt ! 🎉",
+    onboardingDoneSub: "Votre compte est configuré. Commencez dès maintenant.",
+    onboardingContinue: "Continuer",
+    onboardingFinish: "Terminer",
+    onboardingCreateInvoice: "Créer une facture",
+    onboardingAddClient: "Ajouter un client",
+    onboardingGoToDashboard: "Aller au dashboard →",
+    onboardingBack: "Retour",
   },
 
   en: {
@@ -790,6 +839,55 @@ export const t = {
     placeholderCompanyCity: "London EC1A 1BB",
     placeholderCompanyCountry: "Belgium",
     placeholderBillingEmail: "invoices@acme.com",
+
+    // Theme toggle
+    darkMode: "Dark mode",
+    lightMode: "Light mode",
+
+    // Global search
+    searchPlaceholder: "Search invoices, clients, expenses...",
+    searchHint: "Type to search across your entire app",
+    searchNoResults: "No results for",
+    searchResultsInvoices: "Invoices",
+    searchResultsClients: "Clients",
+    searchResultsExpenses: "Expenses",
+
+    // Dashboard top clients
+    topClients: "Top clients",
+    topClientsSub: "By collected revenue",
+    noTopClients: "No data available",
+
+    // Client invoice history
+    invoiceHistory: "Invoice history",
+    clientTotalRevenue: "Total revenue",
+    clientUnpaid: "Unpaid",
+    noClientInvoices: "No invoices for this client",
+    viewInvoices: "View invoices",
+
+    // Sorting
+    sortAsc: "Ascending",
+    sortDesc: "Descending",
+
+    // Reminders
+    sendReminders: "Send reminders",
+    remindersSent: "reminder(s) sent",
+    noOverdueInvoices: "No overdue invoices",
+
+    // Onboarding
+    onboardingWelcome: "Welcome to Cashly!",
+    onboardingWelcomeSub: "Let's set up your company in 2 steps",
+    onboardingStep1Title: "Your company",
+    onboardingStep1Sub: "Basic information",
+    onboardingStep2Title: "Billing",
+    onboardingStep2Sub: "Payment settings",
+    onboardingDoneTitle: "All set! 🎉",
+    onboardingDoneSub: "Your account is configured. Start now.",
+    onboardingContinue: "Continue",
+    onboardingFinish: "Finish",
+    onboardingCreateInvoice: "Create an invoice",
+    onboardingAddClient: "Add a client",
+    onboardingGoToDashboard: "Go to dashboard →",
+    onboardingBack: "Back",
   },
 
   nl: {
@@ -1172,6 +1270,55 @@ export const t = {
     placeholderCompanyCity: "1000 Brussel",
     placeholderCompanyCountry: "België",
     placeholderBillingEmail: "facturen@acme.nl",
+
+    // Theme toggle
+    darkMode: "Donkere modus",
+    lightMode: "Lichte modus",
+
+    // Global search
+    searchPlaceholder: "Zoek facturen, klanten, uitgaven...",
+    searchHint: "Typ om door uw hele app te zoeken",
+    searchNoResults: "Geen resultaten voor",
+    searchResultsInvoices: "Facturen",
+    searchResultsClients: "Klanten",
+    searchResultsExpenses: "Uitgaven",
+
+    // Dashboard top clients
+    topClients: "Top klanten",
+    topClientsSub: "Op geïnde omzet",
+    noTopClients: "Geen gegevens beschikbaar",
+
+    // Client invoice history
+    invoiceHistory: "Factuurgeschiedenis",
+    clientTotalRevenue: "Totale omzet",
+    clientUnpaid: "Onbetaald",
+    noClientInvoices: "Geen facturen voor deze klant",
+    viewInvoices: "Facturen bekijken",
+
+    // Sorting
+    sortAsc: "Oplopend",
+    sortDesc: "Aflopend",
+
+    // Reminders
+    sendReminders: "Herinneringen verzenden",
+    remindersSent: "herinnering(en) verzonden",
+    noOverdueInvoices: "Geen achterstallige facturen",
+
+    // Onboarding
+    onboardingWelcome: "Welkom bij Cashly!",
+    onboardingWelcomeSub: "Laten we uw bedrijf in 2 stappen instellen",
+    onboardingStep1Title: "Uw bedrijf",
+    onboardingStep1Sub: "Basisinformatie",
+    onboardingStep2Title: "Facturering",
+    onboardingStep2Sub: "Betalingsinstellingen",
+    onboardingDoneTitle: "Alles klaar! 🎉",
+    onboardingDoneSub: "Uw account is geconfigureerd. Begin nu.",
+    onboardingContinue: "Doorgaan",
+    onboardingFinish: "Voltooien",
+    onboardingCreateInvoice: "Factuur aanmaken",
+    onboardingAddClient: "Klant toevoegen",
+    onboardingGoToDashboard: "Naar dashboard →",
+    onboardingBack: "Terug",
   },
 };
 

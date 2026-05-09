@@ -78,7 +78,7 @@ export default function SettingsPage() {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-6 md:p-8 pt-16 md:pt-8 overflow-auto">
         {saved && (
           <div className="fixed top-6 right-6 z-50 bg-emerald-500 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium">
             <Check className="w-4 h-4" /> {tr("settingsSaved")}

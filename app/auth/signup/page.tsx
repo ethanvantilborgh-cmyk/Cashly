@@ -32,7 +32,7 @@ export default function SignupPage() {
     } else if (result.needsConfirmation) {
       setNeedsConfirmation(true);
     } else {
-      router.push("/dashboard");
+      router.push("/onboarding");
     }
   }
 

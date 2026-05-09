@@ -20,6 +20,8 @@ import {
 } from "../lib/storage";
 
 type StatusFilter = "all" | "paid" | "pending" | "overdue";
+type SortKey = "id" | "client" | "amount" | "due" | "status";
+type SortDir = "asc" | "desc";
 
 export default function InvoicesPage() {
   const { lang, tr } = useLang();
@@ -51,6 +53,8 @@ export default function InvoicesPage() {
   const [payLoading, setPayLoading]   = useState<string | null>(null);
   const [loading, setLoading]         = useState(true);
   const [company, setCompany]         = useState<CompanySettings | undefined>(undefined);
+  const [sortKey, setSortKey]         = useState<SortKey>("due");
+  const [sortDir, setSortDir]         = useState<SortDir>("desc");
 
   useEffect(() => {
     async function load() {
@@ -95,9 +99,15 @@ export default function InvoicesPage() {
   }
 
   function nextInvId(list: Invoice[]) {
+    const prefix = company?.invoicePrefix?.trim() || "INV";
     const nums = list.map(i => parseInt(i.id.replace(/\D/g, ""), 10)).filter(n => !isNaN(n));
     const max = nums.length ? Math.max(...nums) : 0;
-    return `INV-${String(max + 1).padStart(3, "0")}`;
+    return `${prefix}-${String(max + 1).padStart(3, "0")}`;
+  }
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
   }
 
   async function markAsPaid(id: string) {
@@ -243,11 +253,22 @@ export default function InvoicesPage() {
     setShowModal(false);
   }
 
-  const filtered = invoices.filter(inv => {
-    const matchSearch = inv.client.toLowerCase().includes(search.toLowerCase()) || inv.id.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || inv.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const STATUS_ORDER = { paid: 0, pending: 1, overdue: 2 };
+  const filtered = invoices
+    .filter(inv => {
+      const matchSearch = inv.client.toLowerCase().includes(search.toLowerCase()) || inv.id.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === "all" || inv.status === statusFilter;
+      return matchSearch && matchStatus;
+    })
+    .sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "id")     cmp = a.id.localeCompare(b.id);
+      if (sortKey === "client") cmp = a.client.localeCompare(b.client);
+      if (sortKey === "amount") cmp = invoiceTotalTTC(a.lines) - invoiceTotalTTC(b.lines);
+      if (sortKey === "due")    cmp = a.due.localeCompare(b.due);
+      if (sortKey === "status") cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      return sortDir === "asc" ? cmp : -cmp;
+    });
 
   const total   = invoices.reduce((s, i) => s + i.amount, 0);
   const paid    = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
@@ -282,7 +303,7 @@ export default function InvoicesPage() {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-6 md:p-8 pt-16 md:pt-8 overflow-auto">
         {toast && (
           <div className="fixed top-6 right-6 z-50 bg-emerald-500 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium">
             <Check className="w-4 h-4" /> {toast}
@@ -363,8 +384,26 @@ export default function InvoicesPage() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                {[tr("reference"), tr("client"), tr("lines"), tr("amountHT"), tr("amountTTC"), tr("dueDate"), tr("status"), tr("actions")].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
+                {[
+                  { label: tr("reference"), key: "id" as SortKey },
+                  { label: tr("client"),    key: "client" as SortKey },
+                  { label: tr("lines"),     key: null },
+                  { label: tr("amountHT"),  key: null },
+                  { label: tr("amountTTC"), key: "amount" as SortKey },
+                  { label: tr("dueDate"),   key: "due" as SortKey },
+                  { label: tr("status"),    key: "status" as SortKey },
+                  { label: tr("actions"),   key: null },
+                ].map(({ label, key }) => (
+                  <th
+                    key={label}
+                    onClick={key ? () => toggleSort(key) : undefined}
+                    className={`text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider select-none ${key ? "cursor-pointer hover:text-slate-700" : ""}`}
+                  >
+                    {label}
+                    {key && sortKey === key && (
+                      <span className="ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>
+                    )}
+                  </th>
                 ))}
               </tr>
             </thead>

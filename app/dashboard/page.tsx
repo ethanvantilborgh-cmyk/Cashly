@@ -11,6 +11,17 @@ import { computeDashboardStats } from "../lib/storage";
 import type { Invoice, Expense } from "../lib/storage";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
+function buildTopClients(invoices: Invoice[]) {
+  const map: Record<string, number> = {};
+  invoices.filter(i => i.status === "paid").forEach(i => {
+    map[i.client] = (map[i.client] || 0) + i.amount;
+  });
+  return Object.entries(map)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, revenue]) => ({ name, revenue }));
+}
+
 function buildMonthly(invoices: Invoice[], expenses: Expense[], lang: string) {
   const locale = lang === "nl" ? "nl-NL" : lang === "en" ? "en-GB" : "fr-FR";
   const now = new Date();
@@ -30,7 +41,8 @@ function DashboardContent() {
   const upgraded = searchParams.get("upgraded") === "true";
 
   const [stats, setStats]   = useState({ revenue: 0, totalExp: 0, netProfit: 0, unpaidAmt: 0, unpaidCount: 0, recentInvoices: [] as Invoice[], recentExpenses: [] as Expense[] });
-  const [monthly, setMonthly] = useState<{ month: string; revenus: number; depenses: number }[]>([]);
+  const [monthly, setMonthly]       = useState<{ month: string; revenus: number; depenses: number }[]>([]);
+  const [topClients, setTopClients] = useState<{ name: string; revenue: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +51,7 @@ function DashboardContent() {
       const [invoices, expenses] = await Promise.all([getInvoices(), getExpenses()]);
       setStats(computeDashboardStats(invoices, expenses));
       setMonthly(buildMonthly(invoices, expenses, lang));
+      setTopClients(buildTopClients(invoices));
       setLoading(false);
     }
     load().catch(() => setLoading(false));
@@ -69,7 +82,7 @@ function DashboardContent() {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-6 md:p-8 pt-16 md:pt-8 overflow-auto">
         {upgraded && (
           <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
             <PartyPopper className="w-5 h-5 text-emerald-600 flex-shrink-0" />
@@ -199,6 +212,43 @@ function DashboardContent() {
               <Plus className="w-4 h-4" /> {tr("addExpense")}
             </Link>
           </div>
+        </div>
+
+        {/* Top clients */}
+        <div className="card p-6 mt-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="font-semibold text-slate-900">{tr("topClients")}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{tr("topClientsSub")}</p>
+            </div>
+            <Link href="/clients" className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
+              {tr("seeAll")} <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </div>
+          {topClients.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-6">{tr("noTopClients")}</p>
+          ) : (
+            <div className="space-y-3">
+              {topClients.map((c, i) => {
+                const max = topClients[0].revenue;
+                const pct = max > 0 ? Math.round((c.revenue / max) * 100) : 0;
+                return (
+                  <div key={c.name} className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-slate-400 w-4">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-slate-800 truncate">{c.name}</span>
+                        <span className="text-sm font-semibold text-emerald-600 ml-2">{fmt(c.revenue)} €</span>
+                      </div>
+                      <div className="h-1.5 bg-slate-100 rounded-full">
+                        <div className="h-1.5 bg-emerald-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Pro banner (unused but kept) */}

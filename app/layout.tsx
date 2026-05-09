@@ -4,6 +4,7 @@ import "./globals.css";
 import { LangProvider } from "./context/LangContext";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import GlobalSearch from "./components/GlobalSearch";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>
             <LangProvider>
+              <GlobalSearch />
               {children}
             </LangProvider>
           </AuthProvider>
