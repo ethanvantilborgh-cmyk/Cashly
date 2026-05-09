@@ -21,7 +21,7 @@ export async function POST() {
               name: "Cashly Pro",
               description: "Facturen onbeperkt · Uitgaven · Rapporten · FR/EN/NL",
             },
-            unit_amount: 1900,
+            unit_amount: 1500,
             recurring: { interval: "month" },
           },
           quantity: 1,

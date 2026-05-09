@@ -197,7 +197,7 @@ export default function Home() {
                 <span className="gradient-btn text-xs font-semibold px-4 py-1 rounded-full text-white">{tr("recommended")}</span>
               </div>
               <h3 className="text-xl font-semibold mb-1">Pro</h3>
-              <div className="text-4xl font-bold my-4 text-slate-900">19€<span className="text-lg text-slate-400 font-normal">{tr("perMonth")}</span></div>
+              <div className="text-4xl font-bold my-4 text-slate-900">15€<span className="text-lg text-slate-400 font-normal">{tr("perMonth")}</span></div>
               <p className="text-slate-400 text-sm mb-6">{tr("proPlanDesc")}</p>
               <ul className="space-y-3 mb-8">
                 {[tr("proF1"), tr("proF2"), tr("proF3"), tr("proF4"), tr("proF5"), tr("proF6")].map(f => (

@@ -274,7 +274,7 @@ export const t = {
     invoiceGeneratedFor: "créée pour le",
     limitReached: "Limite atteinte",
     upgradeDesc: "Passez à Cashly Pro pour créer des factures illimitées.",
-    upgradeProFull: "Passer Pro — 19 €/mois",
+    upgradeProFull: "Passer Pro — 15 €/mois",
 
     // Service placeholders
     exampleServiceName: "Développement web",
@@ -342,7 +342,7 @@ export const t = {
     proF4: "Export comptable (CSV/PDF)",
     proF5: "Multi-devises (€, $, £)",
     proF6: "Support prioritaire",
-    startProButton: "Commencer Pro — 19€/mois",
+    startProButton: "Commencer Pro — 15€/mois",
 
     // Landing page - CTA + Footer
     ctaTitle: "Prêt à simplifier votre comptabilité ?",
@@ -726,7 +726,7 @@ export const t = {
     invoiceGeneratedFor: "created for",
     limitReached: "Limit reached",
     upgradeDesc: "Upgrade to Cashly Pro to create unlimited invoices.",
-    upgradeProFull: "Upgrade Pro — €19/month",
+    upgradeProFull: "Upgrade Pro — €15/month",
 
     exampleServiceName: "Web development",
     exampleServiceDescription: "Front/back development",
@@ -792,7 +792,7 @@ export const t = {
     proF4: "Accounting export (CSV/PDF)",
     proF5: "Multi-currency (€, $, £)",
     proF6: "Priority support",
-    startProButton: "Start Pro — €19/month",
+    startProButton: "Start Pro — €15/month",
 
     // Landing page - CTA + Footer
     ctaTitle: "Ready to simplify your bookkeeping?",
@@ -1176,7 +1176,7 @@ export const t = {
     invoiceGeneratedFor: "aangemaakt voor",
     limitReached: "Limiet bereikt",
     upgradeDesc: "Upgrade naar Cashly Pro voor onbeperkte facturen.",
-    upgradeProFull: "Pro worden — €19/maand",
+    upgradeProFull: "Pro worden — €15/maand",
 
     exampleServiceName: "Webontwikkeling",
     exampleServiceDescription: "Front/back ontwikkeling",
@@ -1242,7 +1242,7 @@ export const t = {
     proF4: "Boekhoudexport (CSV/PDF)",
     proF5: "Multi-valuta (€, $, £)",
     proF6: "Prioritaire ondersteuning",
-    startProButton: "Pro starten — €19/maand",
+    startProButton: "Pro starten — €15/maand",
 
     // Landing page - CTA + Footer
     ctaTitle: "Klaar om uw boekhouding te vereenvoudigen?",
