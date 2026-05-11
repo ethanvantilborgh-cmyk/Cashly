@@ -2,7 +2,7 @@
  * db.ts – all Supabase CRUD operations for Cashly.
  * Pages import from here instead of localStorage storage.ts helpers.
  */
-import { getSupabase } from "./supabase";
+import { supabase } from "./supabase";
 import type {
   Invoice, InvoiceLine, Expense, Quote, Service,
   InvoiceStatus, RecurringFreq, QuoteStatus,
@@ -13,7 +13,7 @@ import type { Client } from "../clients/page";
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 async function uid(): Promise<string> {
-  const { data: { user } } = await getSupabase().auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   return user.id;
 }
@@ -47,7 +47,7 @@ export async function getInvoices(): Promise<Invoice[]> {
 
 export async function upsertInvoice(inv: Invoice): Promise<void> {
   const userId = await uid();
-  const { error } = await getSupabase().from("invoices").upsert({
+  const { error } = await supabase.from("invoices").upsert({
     id: inv.id, user_id: userId,
     client: inv.client, email: inv.email,
     lines: inv.lines, amount: inv.amount,
@@ -58,7 +58,7 @@ export async function upsertInvoice(inv: Invoice): Promise<void> {
 }
 
 export async function deleteInvoice(id: string): Promise<void> {
-  const { error } = await getSupabase().from("invoices").delete().eq("id", id);
+  const { error } = await supabase.from("invoices").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -101,7 +101,7 @@ export async function upsertExpense(exp: Expense): Promise<Expense> {
 }
 
 export async function deleteExpense(id: string): Promise<void> {
-  const { error } = await getSupabase().from("expenses").delete().eq("id", id);
+  const { error } = await supabase.from("expenses").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -124,7 +124,7 @@ export async function getQuotes(): Promise<Quote[]> {
 
 export async function upsertQuote(q: Quote): Promise<void> {
   const userId = await uid();
-  const { error } = await getSupabase().from("quotes").upsert({
+  const { error } = await supabase.from("quotes").upsert({
     id: q.id, user_id: userId,
     client: q.client, email: q.email,
     amount: q.amount, status: q.status,
@@ -135,7 +135,7 @@ export async function upsertQuote(q: Quote): Promise<void> {
 }
 
 export async function deleteQuote(id: string): Promise<void> {
-  const { error } = await getSupabase().from("quotes").delete().eq("id", id);
+  const { error } = await supabase.from("quotes").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -156,7 +156,7 @@ export async function getServices(): Promise<Service[]> {
 
 export async function upsertService(s: Service): Promise<void> {
   const userId = await uid();
-  const { error } = await getSupabase().from("services").upsert({
+  const { error } = await supabase.from("services").upsert({
     id: s.id, user_id: userId,
     name: s.name, description: s.description,
     unit_price: s.unitPrice, vat_rate: s.vatRate, unit: s.unit,
@@ -165,7 +165,7 @@ export async function upsertService(s: Service): Promise<void> {
 }
 
 export async function deleteService(id: string): Promise<void> {
-  const { error } = await getSupabase().from("services").delete().eq("id", id);
+  const { error } = await supabase.from("services").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -187,7 +187,7 @@ export async function getClients(): Promise<Client[]> {
 
 export async function upsertClient(c: Client): Promise<void> {
   const userId = await uid();
-  const { error } = await getSupabase().from("clients").upsert({
+  const { error } = await supabase.from("clients").upsert({
     id: c.id, user_id: userId,
     name: c.name, company: c.company,
     email: c.email, phone: c.phone,
@@ -197,7 +197,7 @@ export async function upsertClient(c: Client): Promise<void> {
 }
 
 export async function deleteClient(id: string): Promise<void> {
-  const { error } = await getSupabase().from("clients").delete().eq("id", id);
+  const { error } = await supabase.from("clients").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -233,7 +233,7 @@ export async function getProfile(): Promise<CompanySettings & { plan: string; la
 
 export async function saveProfile(settings: CompanySettings): Promise<void> {
   const userId = await uid();
-  const { error } = await getSupabase().from("profiles").upsert({
+  const { error } = await supabase.from("profiles").upsert({
     id: userId,
     company_name: settings.name,
     company_address: settings.address,
@@ -252,7 +252,7 @@ export async function saveProfile(settings: CompanySettings): Promise<void> {
 
 export async function saveLang(lang: string): Promise<void> {
   const userId = await uid();
-  await getSupabase().from("profiles").upsert({ id: userId, lang });
+  await supabase.from("profiles").upsert({ id: userId, lang });
 }
 
 export async function isPro(): Promise<boolean> {
@@ -263,14 +263,14 @@ export async function isPro(): Promise<boolean> {
 
 export async function activatePro(): Promise<void> {
   const userId = await uid();
-  await getSupabase().from("profiles").upsert({ id: userId, plan: "pro" });
+  await supabase.from("profiles").upsert({ id: userId, plan: "pro" });
 }
 
 // ── Seed (called once after signup) ───────────────────────────────────────
 
 export async function seedUserData(userId: string, companyName = ""): Promise<void> {
   // Mark seeded to avoid double-seeding
-  await getSupabase().from("profiles").upsert({
+  await supabase.from("profiles").upsert({
     id: userId, company_name: companyName, seeded: true,
   });
 
@@ -284,7 +284,7 @@ export async function seedUserData(userId: string, companyName = ""): Promise<vo
   const rnd = () => Math.random().toString(36).slice(2);
 
   // Invoices
-  await getSupabase().from("invoices").insert([
+  await supabase.from("invoices").insert([
     { id: "INV-001", user_id: userId, client: "Acme Corp",      email: "contact@acme.com",   lines: [{ id: rnd(), description: "Web development", qty: 1, unitPrice: 2400, vatRate: 21 }], amount: 2400, status: "paid",    date: m(-10), due: m(20),  vat_rate: 21, recurring: "none" },
     { id: "INV-002", user_id: userId, client: "StartupXYZ",     email: "hello@startup.xyz",  lines: [{ id: rnd(), description: "UI/UX Design", qty: 3, unitPrice: 400, vatRate: 21 }, { id: rnd(), description: "Integration", qty: 2, unitPrice: 300, vatRate: 21 }], amount: 1800, status: "pending", date: m(-5),  due: m(25),  vat_rate: 21, recurring: "monthly" },
     { id: "INV-003", user_id: userId, client: "Design Studio",  email: "info@design.studio", lines: [{ id: rnd(), description: "Consulting", qty: 5, unitPrice: 190, vatRate: 21 }], amount: 950,  status: "overdue", date: m(-30), due: m(-15), vat_rate: 21, recurring: "none" },
@@ -293,7 +293,7 @@ export async function seedUserData(userId: string, companyName = ""): Promise<vo
   ]);
 
   // Expenses
-  await getSupabase().from("expenses").insert([
+  await supabase.from("expenses").insert([
     { user_id: userId, label: "Adobe Creative Cloud", amount: 54.99,  category: "software",       date: m(-2),  note: "" },
     { user_id: userId, label: "Client trip Paris",     amount: 87.50,  category: "transport",      date: m(-4),  note: "Train round-trip" },
     { user_id: userId, label: "Server hosting",        amount: 29.00,  category: "infrastructure", date: m(-5),  note: "Vercel Pro" },
@@ -303,7 +303,7 @@ export async function seedUserData(userId: string, companyName = ""): Promise<vo
   ]);
 
   // Services
-  await getSupabase().from("services").insert([
+  await supabase.from("services").insert([
     { id: "s1", user_id: userId, name: "Web development",  description: "Front/back development",    unit_price: 800,  vat_rate: 21, unit: "day" },
     { id: "s2", user_id: userId, name: "UI/UX Design",     description: "Wireframes and prototypes", unit_price: 600,  vat_rate: 21, unit: "day" },
     { id: "s3", user_id: userId, name: "Consulting",       description: "Advice and strategy",       unit_price: 190,  vat_rate: 21, unit: "hour" },
