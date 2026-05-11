@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const PROTECTED = ["/dashboard", "/invoices", "/quotes", "/expenses", "/services", "/clients", "/reports", "/settings", "/onboarding"];
 const AUTH_PAGES = ["/auth/login", "/auth/signup"];
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   let response = NextResponse.next({ request });
