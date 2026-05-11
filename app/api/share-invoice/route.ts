@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
 
+export const dynamic = "force-dynamic";
+
 const SECRET = process.env.SHARE_SECRET || "cashly-share-secret";
 
 export function generateShareToken(invoiceId: string, userId: string): string {

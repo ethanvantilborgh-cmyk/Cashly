@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Invoice, InvoiceLine, lineHT, lineTVA, lineTTC, invoiceTotalHT, invoiceTotalTVA, invoiceTotalTTC } from "../../lib/storage";
 import type { CompanySettings } from "../../settings/page";
 
+export const dynamic = "force-dynamic";
+
 function buildHtml(invoice: Invoice, company: CompanySettings): string {
   const totalHT  = invoiceTotalHT(invoice.lines);
   const totalTVA = invoiceTotalTVA(invoice.lines);

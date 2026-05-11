@@ -3,6 +3,8 @@ import { Resend } from "resend";
 import { Invoice, InvoiceLine, lineHT, lineTVA, lineTTC, invoiceTotalHT, invoiceTotalTVA, invoiceTotalTTC } from "../../lib/storage";
 import type { CompanySettings } from "../../settings/page";
 
+export const dynamic = "force-dynamic";
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 function buildHtml(invoice: Invoice, company: CompanySettings, paymentUrl?: string): string {

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { invoiceTotalTTC } from "../../lib/storage";
 
+export const dynamic = "force-dynamic";
+
 // Admin client created inside handlers to avoid build-time evaluation
 function getAdmin() {
   return createClient(
